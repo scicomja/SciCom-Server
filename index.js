@@ -10,6 +10,9 @@ const {
 const {
   router: authRouter
 } = require('./models/auth')
+const {
+ notFound
+} = require('./utils')
 
 const DATABASE_URL = process.env.database_url || 'localhost'
 const DATABASE_PORT = process.env.database_port || 27017
@@ -26,4 +29,9 @@ app.use(bodyParser.json())
 // endpoints
 app.use('/auth', authRouter)
 app.use('/user', userRouter)
+
+// general 404 error
+app.use('*', (req,res) => notFound(res))
+
+// launch app
 app.listen(3000, () => console.log('server listening on port 3000'))

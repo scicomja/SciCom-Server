@@ -2,6 +2,10 @@ const mongoose = require('mongoose')
 const express = require('express')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
+const {
+  unauthorized, notFound
+} = require('../utils')
+
 const router = express.Router()
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -11,7 +15,7 @@ const UserSchema = new mongoose.Schema({
 })
 
 UserSchema.pre('save', function(next) {
-    var user = this
+    const user = this
     // only hash the password if it has been modified (or is new)
     if (!user.isModified('password')) return next()
     // generate a salt
@@ -36,8 +40,7 @@ UserSchema.methods.comparePassword = function(candidatePassword, cb) {
 }
 const UserModel = mongoose.model('User',UserSchema)
 
-const unauthorized = (res) => res.status(403).json({error: "Unauthorized"})
-const notFound = (res) => res.status(404).json({error: "Resource not found"})
+
 router.use(passport.authenticate('jwt', {session: false}))
 router.get('/:username', async (req, res) => {
   if(!req.user) return unauthorized(res)
