@@ -8,6 +8,7 @@ const {
   model: userModel
 } = require('./models/user')
 const {
+  authenticateMiddleware,
   router: authRouter
 } = require('./models/auth')
 const {
@@ -27,8 +28,9 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // endpoints
+app.use('/uploads', express.static('uploads/'))
 app.use('/auth', authRouter)
-app.use('/user', userRouter)
+app.use('/user', authenticateMiddleware, userRouter)
 
 // general 404 error
 app.use('*', (req,res) => notFound(res))
