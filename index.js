@@ -1,0 +1,29 @@
+
+const express = require('express')
+const morgan = require('morgan')
+const mongoose = require('mongoose')
+const bodyParser = require('body-parser')
+const {
+  router: userRouter,
+  model: userModel
+} = require('./models/user')
+const {
+  router: authRouter
+} = require('./models/auth')
+
+const DATABASE_URL = process.env.database_url || 'localhost'
+const DATABASE_PORT = process.env.database_port || 27017
+const DATABASE_NAME = process.env.database_name || 'scicom'
+// connect to database
+mongoose.connect(`mongodb://${DATABASE_URL}:${DATABASE_PORT}/${DATABASE_NAME}`)
+
+app = express()
+// logging middleware
+app.use(morgan('combined'))
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
+
+// endpoints
+app.use('/auth', authRouter)
+app.use('/user', userRouter)
+app.listen(3000, () => console.log('server listening on port 3000'))
