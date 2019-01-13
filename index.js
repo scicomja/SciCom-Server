@@ -5,12 +5,16 @@ const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const {
   router: userRouter,
-  model: userModel
 } = require('./models/user')
 const {
   authenticateMiddleware,
   router: authRouter
 } = require('./models/auth')
+
+const {
+  router: projectRouter
+} = require('./models/project')
+
 const {
  notFound
 } = require('./utils')
@@ -31,6 +35,7 @@ app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads/'))
 app.use('/auth', authRouter)
 app.use('/user', authenticateMiddleware, userRouter)
+app.use('/project', authenticateMiddleware, projectRouter)
 
 // general 404 error
 app.use('*', (req,res) => notFound(res))

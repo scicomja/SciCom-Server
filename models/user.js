@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const express = require('express')
 const bcrypt = require('bcrypt')
-const passport = require('passport')
 
 const _ = require('lodash')
 
@@ -9,6 +8,9 @@ const multer  = require('multer')
 const fs = require('fs')
 const path = require('path')
 const { badRequest } = require('../utils')
+const {
+  unauthorized, notFound
+} = require('../utils')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -24,11 +26,6 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname)
   }
 })
-
-const {
-  unauthorized, notFound
-} = require('../utils')
-
 const router = express.Router()
 // schema definition
 
@@ -38,7 +35,7 @@ const rawSchema = {
   email: { type: String, required: true},
   password: { type: String, select: false, required: true },
   isPolitician: {type: Boolean, required: true, default: false},
-  verified: { type: Boolean, required: true, default: false },
+  // verified: { type: Boolean, required: true, default: false },
 
   avatar: String,
   // contacts
@@ -118,7 +115,7 @@ UserSchema.pre('save', function(next) {
     })
 })
 
-const UserModel = mongoose.model('User',UserSchema)
+const UserModel = mongoose.model('User', UserSchema)
 
 // endpoints
 router.get('/:username', async (req, res) => {
@@ -146,6 +143,7 @@ router.post('/:username',
       // append the field
       const info = _.pick(req.body, normalFields)
       fileFields.forEach(f => {
+        if(!req.files) return
         if(f in req.files) info[f] = `uploads/${username}/${f}`
       })
       // and update the rest of the models
@@ -160,6 +158,7 @@ router.post('/:username',
 
 module.exports = {
   router,
+  compulsoryFields,
   model: UserModel,
   schema: UserSchema
 }
