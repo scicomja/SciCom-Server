@@ -8,8 +8,23 @@ const _ = require('lodash')
 const multer  = require('multer')
 const fs = require('fs')
 const path = require('path')
+const { badRequest } = require('../utils')
 
-const upload = multer({ dest: 'uploads/' })
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = `uploads/${req.params.username}`
+    // create this directory if not exist
+    if(!fs.existsSync(dir)) {
+      fs.mkdirSync(dir)
+    }
+    cb(null, dir)
+  },
+
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname)
+  }
+})
+
 const {
   unauthorized, notFound
 } = require('../utils')
@@ -65,6 +80,22 @@ const rawSchema = {
 const compulsoryFields = 'username,password,isPolitician'.split(',')
 const optionalFields = _.differenceWith(Object.keys(rawSchema), compulsoryFields, _.isEqual)
 const fileFields = "avatar,CV".split(',')
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const imageTypes = /jpeg|jpg|png|gif/
+
+    if (file.fieldname === 'avatar' &&
+        !imageTypes.test(file.mimetype)) {
+        return cb(new Error('Only images are allowed'))
+    }
+    if (file.fieldname === 'CV' &&
+          !/pdf/.test(file.mimetype)) {
+        return cb(new Error('Only PDFs are allowed'))
+    }
+    cb(null, true)
+  }
+}).fields(fileFields.map(f => ({name: f})))
 
 // finally, create the schema
 const UserSchema = new mongoose.Schema(rawSchema)
@@ -86,15 +117,6 @@ UserSchema.pre('save', function(next) {
     })
 })
 
-UserSchema.methods.comparePassword = function(candidatePassword) {
-  const prom = (resolve, reject) => {
-        const password = this.password
-        console.log('password in prom', password)
-  }
-  console.log('password in can', this.password)
-  return new Promise(prom.bind(UserSchema))
-}
-
 const UserModel = mongoose.model('User',UserSchema)
 
 // endpoints
@@ -106,10 +128,8 @@ router.get('/:username', async (req, res) => {
   return res.status(200).json(user)
 })
 
-router.post('/:username',upload.fields([
-    {name: "avatar"},
-    {name: "CV"}
-  ]), async (req, res) => {
+router.post('/:username',
+  async (req, res) => {
     // first check if the user is modifying info of himself
     const { username } = req.params
     if (req.user.username !== username) {
@@ -118,14 +138,22 @@ router.post('/:username',upload.fields([
 
     // parsing params
     const normalFields = _.differenceWith(optionalFields, fileFields, _.isEqual)
-    const info = _.pick(req.body, normalFields)
-    // for each file, we create a
-    const result = await UserModel.findOneAndUpdate({username}, info)
 
-    return res.status(200).json({
-      ...req.user,
-      ...info
+    // for each file, we append a field
+    upload(req, res, async err => {
+      if(err) return badRequest(res, err)
+      // append the field
+      const info = _.pick(req.body, normalFields)
+      fileFields.forEach(f => {
+        if(f in req.files) info[f] = `uploads/${username}/${f}`
+      })
+      // and update the rest of the models
+      const result = await UserModel.findOneAndUpdate({username}, info)
+      return res.status(200).json({
+        ...info
+      })
     })
+
 })
 
 module.exports = {

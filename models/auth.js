@@ -48,8 +48,6 @@ const authenticateMiddleware = (req, res, next) => {
     })(req, res, next);
 }
 const router = express.Router()
-
-
 const signUser = (username) => jwt.sign({ username }, SECRET, {})
 
 router.post('/register', async (req, res) => {
