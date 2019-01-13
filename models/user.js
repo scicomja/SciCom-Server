@@ -38,6 +38,7 @@ const rawSchema = {
   email: { type: String, required: true},
   password: { type: String, select: false, required: true },
   isPolitician: {type: Boolean, required: true, default: false},
+  verified: { type: Boolean, required: true, default: false },
 
   avatar: String,
   // contacts
@@ -121,7 +122,6 @@ const UserModel = mongoose.model('User',UserSchema)
 
 // endpoints
 router.get('/:username', async (req, res) => {
-  if(!req.user) return unauthorized(res)
   const {username} = req.params
   const user = await UserModel.findOne({username})
   if(!user) return notFound(res)
@@ -132,6 +132,7 @@ router.post('/:username',
   async (req, res) => {
     // first check if the user is modifying info of himself
     const { username } = req.params
+    // additional check: besides logged in , he has to be the same user
     if (req.user.username !== username) {
       return unauthorized(res)
     }
@@ -148,10 +149,11 @@ router.post('/:username',
         if(f in req.files) info[f] = `uploads/${username}/${f}`
       })
       // and update the rest of the models
-      const result = await UserModel.findOneAndUpdate({username}, info)
-      return res.status(200).json({
-        ...info
-      })
+      const result = await UserModel.findOneAndUpdate(
+        {username}, info,
+        { runValidators: true })
+
+      return res.status(200).json(info)
     })
 
 })

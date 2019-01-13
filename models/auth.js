@@ -42,7 +42,9 @@ const authenticateMiddleware = (req, res, next) => {
     passport.authenticate('jwt', (err, user, info) => {
 
         if (err) return next(err); // It is null
-        if (!user) return res.status(403).json(info);
+        if (!user) return res.status(403).json({
+          error: "unauthorized"
+        });
         req.user = user
         next(err)
     })(req, res, next);
