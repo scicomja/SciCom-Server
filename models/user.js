@@ -11,6 +11,7 @@ const { badRequest } = require('../utils')
 const {
   unauthorized, notFound
 } = require('../utils')
+const { userUploadDir } = require('../constants')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -156,6 +157,7 @@ router.post('/:username',
 
 })
 
+router.get('*', express.static(userUploadDir))
 module.exports = {
   router,
   compulsoryFields,

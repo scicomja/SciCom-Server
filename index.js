@@ -32,7 +32,6 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // endpoints
-app.use('/uploads', express.static('uploads/'))
 app.use('/auth', authRouter)
 app.use('/user', authenticateMiddleware, userRouter)
 app.use('/project', authenticateMiddleware, projectRouter)
