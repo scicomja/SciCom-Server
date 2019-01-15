@@ -6,6 +6,13 @@ const notFound = (res) => res.status(404).json({error: "Resource not found"})
 // 400
 const badRequest = (res, err) => res.status(400).json({error: "bad request", ...err})
 
+const containsString = (originalString, testString, caseSensitive = false) => {
+  if (!caseSensitive) {
+    originalString = originalString.toLowerCase()
+    testString = testString.toLowerCase()
+  }
+  return originalString.indexOf(testString) > -1
+}
 const randomString = (len = 24, base = 32) => {
   let res = ''
   while (res.length < len) {
@@ -23,11 +30,27 @@ const generateID = async (model) => {
     if(!duplicate) return id
   }
 }
+
+// filtering functions
+const isNumber = v => !isNaN(v)
+const isInteger = n => {
+  const num = parseFloat(n)
+  return isNumber(num) && (num | 0) === num
+}
+
+const escapeForRegex = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+
+const isPositiveInteger = n => isInteger(n) && parseFloat(n) > 0
 module.exports = {
   unauthorized,
   notFound,
   badRequest,
 
   randomString,
-  generateID
+  generateID,
+
+  isNumber,
+  isInteger,
+  isPositiveInteger,
+  escapeForRegex
 }

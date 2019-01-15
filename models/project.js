@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const lockdown = require('mongoose-lockdown')
+const mongoosePaginate = require('mongoose-paginate')
 const express = require('express')
 const ObjectId = require('mongoose').Types.ObjectId
 
@@ -7,6 +8,10 @@ const multer  = require('multer')
 const fs = require('fs')
 const path = require('path')
 
+const {
+  validateParameters,
+  constructQuery
+} = require('./validator/project')
 const {
   germanStates,
   projectStatus,
@@ -69,7 +74,8 @@ const rawSchema = {
   topic: [String],
   salary: {
     type: Number,
-    validate: v => v > 0
+    default: 0,
+    validate: v => v >= 0
   },
   questions: [String]
 }
@@ -77,7 +83,7 @@ const fileFields = ['file']
 const ProjectSchema = new mongoose.Schema(
   rawSchema, {
     timestamps: true
-}).plugin(lockdown)
+}).plugin(lockdown).plugin(mongoosePaginate)
 
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
@@ -189,7 +195,40 @@ router.post('/:id', async (req,res) => {
 
   })
 })
-// the rest is for serving the file of the projects 
+/*
+  search for projects
+  get params:
+  title: substring,
+  status: exact string
+  nature: exact string
+  salary: number, show results >=
+  from: date: show results on or after
+  page: number, positive integer
+*/
+router.get('/', async (req,res) => {
+  // extract query
+  const recognizedParams = "title,status,nature,salary,from,page".split(',')
+  const query = _.pick(req.query, recognizedParams)
+
+  if(Object.keys(query).length === 0) {
+    return res.status(200).json({})
+  }
+  if(!validateParameters(query)) {
+    return badRequest(res, {message: "invalid query"})
+  }
+  const {page} = req.query
+  const limit = 10
+  const queryObject = constructQuery(query)
+  // pagination settings
+  // check the types one by one
+
+  const results = await ProjectModel.find(queryObject)
+    .sort('-createdAt')
+    .skip((parseInt(page) - 1) * limit)
+
+  return res.status(200).json(results)
+})
+// the rest is for serving the file of the projects
 router.get('*', express.static(projectDir))
 module.exports = {
   router
