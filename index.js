@@ -6,6 +6,7 @@ const bodyParser = require('body-parser')
 const {
   router: userRouter,
 } = require('./models/user')
+
 const {
   authenticateMiddleware,
   router: authRouter
@@ -14,6 +15,10 @@ const {
 const {
   router: projectRouter
 } = require('./models/project')
+
+const {
+  router: applicationRouter
+} = require('./models/application')
 
 const {
  notFound
@@ -35,7 +40,7 @@ app.use(bodyParser.json())
 app.use('/auth', authRouter)
 app.use('/user', authenticateMiddleware, userRouter)
 app.use('/project', authenticateMiddleware, projectRouter)
-
+app.use('/application', authenticateMiddleware, applicationRouter)
 // general 404 error
 app.use('*', (req,res) => notFound(res))
 

@@ -14,6 +14,11 @@ const projectType = [
   'parttime',
   'voluntary'
 ]
+const applicationStatus = [
+  "pending",
+  "accepted",
+  "rejected"
+]
 
 const projectDir = 'projects/'
 const userUploadDir = 'uploads/'
@@ -22,5 +27,7 @@ module.exports = {
   projectStatus,
   projectType,
   projectDir,
-  userUploadDir
+  userUploadDir,
+  applicationStatus
+  
 }

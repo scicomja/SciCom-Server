@@ -12,6 +12,7 @@ const {
   unauthorized, notFound
 } = require('../utils')
 const { userUploadDir } = require('../constants')
+const { model: ApplicationModel } = require('./application')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

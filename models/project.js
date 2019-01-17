@@ -1,12 +1,13 @@
 const mongoose = require('mongoose')
 const lockdown = require('mongoose-lockdown')
-const mongoosePaginate = require('mongoose-paginate')
 const express = require('express')
 const ObjectId = require('mongoose').Types.ObjectId
 
 const multer  = require('multer')
 const fs = require('fs')
 const path = require('path')
+
+// const { ApplicationModel } = require('./application')
 
 const {
   validateParameters,
@@ -83,7 +84,7 @@ const fileFields = ['file']
 const ProjectSchema = new mongoose.Schema(
   rawSchema, {
     timestamps: true
-}).plugin(lockdown).plugin(mongoosePaginate)
+}).plugin(lockdown)
 
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
@@ -228,8 +229,56 @@ router.get('/', async (req,res) => {
 
   return res.status(200).json(results)
 })
+// submit an application to a project
+// id is refering to a project
+router.post('/apply/:id', async (req,res) => {
+  const { ApplicationModel } = require('./application')
+  // only students can apply
+  if(req.user.isPolitician) {
+    return unauthorized(res)
+  }
+  const { answers } = req.body
+  const { _id: userId } = req.user
+  console.log('userId', userId)
+
+  const { id: projectId } = req.params
+  // check if the project exists
+  const project = await ProjectModel.findOne({
+    _id: projectId
+  })
+  if(!project) return notFound(res)
+  // check if the application exists...
+  const application = await ApplicationModel.findOne({
+    applicant: userId,
+    project: projectId
+  })
+  // treat this as removing the application if exists
+  if(application) {
+    await application.remove()
+    return res.status(200).json({
+      message: 'removed',
+      ...application // give back the details of the application
+    })
+  }
+  // otherwise user is applying for such project
+  // continue filling out the info
+
+  const rawApplication = {
+    applicant: ObjectId(userId),
+    project: projectId,
+    answers
+  }
+  const newApplication = new ApplicationModel(rawApplication)
+  try {
+    await newApplication.save()
+    return res.status(201).json(rawApplication)
+  } catch(e) {
+    return badRequest(res,e)
+  }
+})
 // the rest is for serving the file of the projects
 router.get('*', express.static(projectDir))
 module.exports = {
-  router
+  router,
+  model: ProjectModel
 }
