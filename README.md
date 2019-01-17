@@ -11,7 +11,7 @@ Developed endpoints are listed below
   - GET /:username, retrieve user info
   - GET /\*, access user media
 - /project (JWT required)
-  - GET /, search for projects (available attributes: title, status, nature, salary,  from,  page)
+  - GET /, list users' projects when no params are given, search for projects (available attributes: title, status, nature, salary,  from,  page) when there are
   - POST /, create a new project
   - POST /:id, modify project info
   - GET  /:id, get project info

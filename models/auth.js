@@ -15,7 +15,7 @@ const {
 const jwt = require("jsonwebtoken")
 const ExtractJwt = require('passport-jwt').ExtractJwt
 const SECRET = process.env.secret || "SOME SECRET"
-const { unauthorized } = require('../utils')
+const { unauthorized, badRequest } = require('../utils')
 // configure authentication strategy
 passport.use(new JWTStrategy({
         jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
@@ -74,15 +74,20 @@ router.post('/register', async (req, res) => {
     })
   }
   const token = signUser(username)
-  const result = await UserModel.create({
-    username,
-    email,
-    password,
-    isPolitician
-  })
-  return res.status(201).json({
-    token
-  })
+  try {
+    const result = await UserModel.create({
+      username,
+      email,
+      password,
+      isPolitician
+    })
+    return res.status(201).json({
+      token
+    })
+  } catch(err) {
+    return badRequest(res, err)
+  }
+
 })
 
 router.post('/login', async (req, res) => {

@@ -105,6 +105,6 @@ router.get('/', async (req, res) => {
 })
 module.exports = {
   router,
-  ApplicationModel,
+  model: ApplicationModel,
   schema: ApplicationSchema
 }

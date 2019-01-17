@@ -13,6 +13,7 @@ const {
 } = require('../utils')
 const { userUploadDir } = require('../constants')
 const { model: ApplicationModel } = require('./application')
+const { model: ProjectModel } = require('./project')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

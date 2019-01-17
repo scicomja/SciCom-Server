@@ -27,6 +27,7 @@ const {
 const _ = require('lodash')
 
 const { model: UserModel } = require('./user')
+
 const router = express.Router()
 
 const rawSchema = {
@@ -42,11 +43,7 @@ const rawSchema = {
   creator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      validate: async (v) => {
-            const user = await UserModel.findOne({_id: v})
-            if(!user) return false
-            return user.isPolitician
-      },
+      required: true,
       lockdown: true
   },
   from: {
@@ -64,7 +61,7 @@ const rawSchema = {
   nature: {
     type: String,
     required: true,
-    default: 'internship',
+    default: projectType[0],
     enum: projectType
   },
   state: {
@@ -88,6 +85,7 @@ const ProjectSchema = new mongoose.Schema(
 
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
+
 router.get('/:id', async (req,res) => {
   const { id } = req.params
   const project = await ProjectModel.findOne({_id: id})
@@ -153,7 +151,7 @@ router.post('/',
         if(req.file) {
           details.file = `${projectDir}${req.params.id}`
         }
-        // mark this as the
+        // mark the creator and id of the project
         details.creator = req.user._id
         details._id = req.params.id
         try {
@@ -212,7 +210,20 @@ router.get('/', async (req,res) => {
   const query = _.pick(req.query, recognizedParams)
 
   if(Object.keys(query).length === 0) {
-    return res.status(200).json({})
+    // when no parameters are given, get the list of projects created / applied by user
+    const { _id: id, isPolitician } = req.user
+    if(isPolitician) {
+      // give list of projects created by him.
+      const createdProjects = await ProjectModel.find({creator: id})
+      return res.status(200).json(createdProjects)
+    } else {
+      // give list of projects applied by him.
+      const { model: ApplicationModel } = require('./application')
+      const appliedProjects = await ApplicationModel.find({ applicant: id})
+                                .populate('project')
+                                .select('project')
+      return res.status(200).json(appliedProjects)
+    }
   }
   if(!validateParameters(query)) {
     return badRequest(res, {message: "invalid query"})
@@ -232,7 +243,9 @@ router.get('/', async (req,res) => {
 // submit an application to a project
 // id is refering to a project
 router.post('/apply/:id', async (req,res) => {
-  const { ApplicationModel } = require('./application')
+  // now the application model is needed
+  const { model: ApplicationModel } = require('./application')
+
   // only students can apply
   if(req.user.isPolitician) {
     return unauthorized(res)
