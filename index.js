@@ -37,6 +37,14 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // endpoints
+app.use('/constants', (_, res) => {
+  const {
+    germanStates, projectStatus, projectType, applicationStatus
+  } = require('./constants')
+  return res.status(200).json({
+    germanStates, projectStatus, projectType, applicationStatus
+  })
+})
 app.use('/auth', authRouter)
 app.use('/user', authenticateMiddleware, userRouter)
 app.use('/project', authenticateMiddleware, projectRouter)
