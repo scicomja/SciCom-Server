@@ -81,7 +81,14 @@ const rawSchema = {
     validate: {
       validator: (v) => this.isPolitician
     }
-  }
+  },
+  bookmarks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      autopopulate: true
+    }
+  ]
 }
 const compulsoryFields = 'username,password,isPolitician'.split(',')
 const optionalFields = _.differenceWith(Object.keys(rawSchema), compulsoryFields, _.isEqual)
@@ -105,6 +112,7 @@ const upload = multer({
 
 // finally, create the schema
 const UserSchema = new mongoose.Schema(rawSchema)
+  .plugin(require('mongoose-autopopulate'))
 
 UserSchema.pre('save', function(next) {
     const user = this

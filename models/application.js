@@ -133,7 +133,7 @@ router.get('/', async (req, res) => {
     return res.status(200).json(submittedApplications)
   } else {
     /*
-        Searching for all applications, which is the project of the pro
+        Searching for all applications, which is the project of the politician
     */
     const createdProjects = await ProjectModel.find({
       creator: req.user._id

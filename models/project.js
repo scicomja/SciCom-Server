@@ -307,6 +307,34 @@ router.post('/apply/:id', async (req,res) => {
     return badRequest(res,e)
   }
 })
+router.post('/bookmark/:id', async (req, res) => {
+  if(req.user.isPolitician) {
+    return unauthorized(res, "only students can bookmark projects")
+  }
+  // check if project exists
+  const {id: projectId} = req.params
+  const project = await ProjectModel.findOne({
+    _id: projectId
+  })
+  if(!project) return notFound(res)
+
+  const remainingBookmarks = req.user.bookmarks
+      .filter(bm => !bm._id.equals(projectId))
+  const ids = remainingBookmarks.map(bm => bm._id)
+  if(remainingBookmarks.length != req.user.bookmarks.length) {
+    // bookmark already exists
+    req.user.set("bookmarks", ids)
+    await req.user.save()
+    return res.status(200).json(remainingBookmarks)
+  } else {
+    // bookmark hasnt been added.
+    ids.push(ObjectId(projectId))
+    req.user.set("bookmarks", ids)
+    await req.user.save()
+    return res.status(200).json([...remainingBookmarks, project])
+  }
+
+})
 // the rest is for serving the file of the projects
 router.get('*', express.static(projectDir))
 module.exports = {
