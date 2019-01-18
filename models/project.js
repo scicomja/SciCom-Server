@@ -44,7 +44,8 @@ const rawSchema = {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      lockdown: true
+      lockdown: true,
+      autopopulate: true
   },
   from: {
     type: Date,
@@ -81,7 +82,9 @@ const fileFields = ['file']
 const ProjectSchema = new mongoose.Schema(
   rawSchema, {
     timestamps: true
-}).plugin(lockdown)
+})
+.plugin(lockdown)
+.plugin(require('mongoose-autopopulate'))
 
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
@@ -91,8 +94,7 @@ router.get('/:id', async (req,res) => {
   const { _id: userId } = req.user
   const project = await ProjectModel.findOne({_id: id})
   if(!project) return notFound(res)
-  if(userId.equals(project.creator)) {
-    console.log('aggregating ')
+  if(userId.equals(project.creator._id)) {
     const { model: ApplicationModel } = require('./application')
     // This is the creator of the project
     // populate application schema here
@@ -179,7 +181,7 @@ router.post('/:id', async (req,res) => {
   const {id} = req.params
   const project = await ProjectModel.findOne({_id: id})
   if(!project) return notFound(res)
-  if(!req.user._id.equals(project.creator))
+  if(!req.user._id.equals(project.creator._id))
     return unauthorized(res)
 
   upload(req, res, async err => {
@@ -250,6 +252,7 @@ router.get('/', async (req,res) => {
 
   return res.status(200).json(results)
 })
+
 // submit an application to a project
 // id is refering to a project
 router.post('/apply/:id', async (req,res) => {
@@ -269,7 +272,7 @@ router.post('/apply/:id', async (req,res) => {
   // check if the project exists
   const project = await ProjectModel.findOne({
     _id: projectId
-  })
+  }).populate('creator')
   if(!project) return notFound(res)
   // check if the application exists...
   const application = await ApplicationModel.findOne({

@@ -1,5 +1,20 @@
 const germanStates = [
   "Bayern",
+  "Berlin",
+  "Niedersachsen",
+  "Baden-Württemberg",
+  "Rheinland-Pfalz",
+  "Sachsen",
+  "Thüringen",
+  "Hessen",
+  "Nordrhein-Westfalen",
+  "Sachsen-Anhalt",
+  "Brandenburg",
+  "Mecklenburg-Vorpommern",
+  "Hamburg",
+  "Schleswig-Holstein",
+  "Saarland",
+  "Bremen"
 ]
 
 const projectStatus = [
@@ -29,5 +44,5 @@ module.exports = {
   projectDir,
   userUploadDir,
   applicationStatus
-  
+
 }

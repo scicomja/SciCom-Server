@@ -17,7 +17,8 @@ const rawSchema = {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    lockdown: true
+    lockdown: true,
+    autopopulate: true
   },
   project: {
     type: mongoose.Schema.Types.ObjectId,
@@ -53,7 +54,9 @@ const rawSchema = {
 const ApplicationSchema = new mongoose.Schema(
   rawSchema, {
     timestamps: true
-}).plugin(lockdown)
+})
+.plugin(lockdown)
+.plugin(require('mongoose-autopopulate'))
 
 const ApplicationModel = mongoose.model('Application', ApplicationSchema)
 
@@ -65,10 +68,10 @@ router.get('/:id', async (req, res) => {
     _id: id
   }).populate("project")
   if(!application) return notFound(res)
-  if(req.user.isPolitician && !userId.equals(application.project.creator)) {
+  if(req.user.isPolitician && !userId.equals(application.project.creator._id)) {
     return unauthorized(res)
   }
-  if(!req.user.isPolitician && !userId.equals(application.applicant)) {
+  if(!req.user.isPolitician && !userId.equals(application.applicant._id)) {
     return unauthorized(res)
   }
   return res.status(200).json(application)
@@ -86,11 +89,12 @@ router.post('/:id/accept', async (req, res) => {
   }).populate('project')
   if(!application) return notFound(res)
 
-  if(!id.equals(application.project.creator)) {
+  if(!id.equals(application.project.creator._id)) {
     return unauthorized(res)
   }
 
-  await application.set("status", "accepted")
+  application.set("status", "accepted")
+  await application.save()
   return res.status(200).json(application)
 })
 
@@ -105,11 +109,12 @@ router.post('/:id/reject', async (req, res) => {
   }).populate('project')
   if(!application) return notFound(res)
 
-  if(!id.equals(application.project.creator)) {
+  if(!id.equals(application.project.creator._id)) {
     return unauthorized(res)
   }
 
-  await application.set("status", "rejected")
+  application.set("status", "rejected")
+  await application.save()
   return res.status(200).json(application)
 })
 // get related applications of the user
