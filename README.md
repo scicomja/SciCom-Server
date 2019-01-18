@@ -7,6 +7,7 @@ Developed endpoints are listed below
   - POST /register, register
   - POST /login, login
 - /user (JWT required)
+  - GET /, return user's info when no params are given, search for users (available attributes: name) when there are
   - POST /:username, modify user info
   - GET /:username, retrieve user info
   - GET /\*, access user media
