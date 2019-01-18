@@ -7,7 +7,10 @@ const _ = require('lodash')
 const multer  = require('multer')
 const fs = require('fs')
 const path = require('path')
-const { badRequest } = require('../utils')
+const {
+  badRequest,
+  escapeForRegex
+} = require('../utils')
 const {
   unauthorized, notFound
 } = require('../utils')
@@ -39,6 +42,8 @@ const rawSchema = {
   password: { type: String, select: false, required: true },
   isPolitician: {type: Boolean, required: true, default: false},
   // verified: { type: Boolean, required: true, default: false },
+  firstName: String,
+  lastName: String,
 
   avatar: String,
   // contacts
@@ -121,6 +126,28 @@ UserSchema.pre('save', function(next) {
 const UserModel = mongoose.model('User', UserSchema)
 
 // endpoints
+/*
+  Search user
+  For now the searches are restricted to name search
+  means only the "name" field will be considered
+*/
+router.get('/', async (req, res) => {
+  const { name } = req.query
+  // return the user itself if no parameters are given
+  if(!name) return res.status(200).json(req.user)
+  const searchString = escapeForRegex(name)
+  const searchOption = {$regex: searchString}
+  const users = await UserModel.find({
+    $or: [
+      {"firstName": searchOption},
+      {"lastName": searchOption},
+      {"username": searchOption}
+    ]
+  })
+  return res.status(200).json(users)
+})
+
+// info for particular users
 router.get('/:username', async (req, res) => {
   const {username} = req.params
   const user = await UserModel.findOne({username})
