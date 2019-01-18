@@ -37,16 +37,16 @@ const rawSchema = {
     required: true,
     default: [],
     // check answers to each of the questions are there
-    validate: {
-      validator: async function (v) {
-        console.log('in validator', this.project)
-        const proejct = await ProjectModel.findOne({_id: this.project})
-        if(!project) return false
-        console.log('validate projects', project)
-        return Object.keys(v).every(q => (q in project.questions))
-      },
-      message: "All questions from projects should be answered"
-    }
+    // validate: {
+    //   validator: async function (v) {
+    //     console.log('in validator', this.project)
+    //     const proejct = await ProjectModel.findOne({_id: this.project})
+    //     if(!project) return false
+    //     console.log('validate projects', project)
+    //     return Object.keys(v).every(q => (q in project.questions))
+    //   },
+    //   message: "All questions from projects should be answered"
+    // }
   }
 }
 
@@ -62,18 +62,56 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params
   const userId = req.user._id
   const application = await ApplicationModel.findOne({
-    _id: id,
-    // being able to access only if user is the applicant or the creator of this project
-    $or: [
-      {applicant: userId},
-      {"project.creator": userId}
-    ]
-  })
+    _id: id
+  }).populate("project")
   if(!application) return notFound(res)
+  if(req.user.isPolitician && !userId.equals(application.project.creator)) {
+    return unauthorized(res)
+  }
+  if(!req.user.isPolitician && !userId.equals(application.applicant)) {
+    return unauthorized(res)
+  }
+  return res.status(200).json(application)
+
+})
+
+router.post('/:id/accept', async (req, res) => {
+  if (!req.user.isPolitician) {
+    return unauthorized(res, "only politicians can accept applications")
+  }
+  const { id: applicationId } = req.params
+  const { _id: id } = req.user
+  const application = await ApplicationModel.findOne({
+    _id: applicationId
+  }).populate('project')
+  if(!application) return notFound(res)
+
+  if(!id.equals(application.project.creator)) {
+    return unauthorized(res)
+  }
+
+  await application.set("status", "accepted")
   return res.status(200).json(application)
 })
 
+router.post('/:id/reject', async (req, res) => {
+  if (!req.user.isPolitician) {
+    return unauthorized(res, "only politicians can accept applications")
+  }
+  const { id: applicationId } = req.params
+  const { _id: id } = req.user
+  const application = await ApplicationModel.findOne({
+    _id: applicationId
+  }).populate('project')
+  if(!application) return notFound(res)
 
+  if(!id.equals(application.project.creator)) {
+    return unauthorized(res)
+  }
+
+  await application.set("status", "rejected")
+  return res.status(200).json(application)
+})
 // get related applications of the user
 /*
   Logic is even more complicated:
@@ -97,7 +135,7 @@ router.get('/', async (req, res) => {
     }, "_id")
     // which is list of ids of the projects this user(politician) created.
     const receivedApplications = await ApplicationModel.find({
-      'project.creator': {$in: createdProjects}
+      'project': {$in: createdProjects}
     })
 
     return res.status(200).json(receivedApplications)

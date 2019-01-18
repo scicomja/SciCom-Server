@@ -88,12 +88,22 @@ const ProjectModel = mongoose.model('Project', ProjectSchema)
 
 router.get('/:id', async (req,res) => {
   const { id } = req.params
+  const { _id: userId } = req.user
   const project = await ProjectModel.findOne({_id: id})
-  if(project.creator === req.user._id) {
+  if(!project) return notFound(res)
+  if(userId.equals(project.creator)) {
+    console.log('aggregating ')
+    const { model: ApplicationModel } = require('./application')
     // This is the creator of the project
     // populate application schema here
+    const applicationsReceived = await ApplicationModel.find({
+      project: id
+    })
+    return res.status(200).json({
+      ...project._doc, // otherwise it gives away lots of internal stuff when spreading
+      applications: applicationsReceived
+    })
   }
-  if(!project) return notFound(res)
   return res.status(200).json(project)
 })
 
@@ -248,11 +258,12 @@ router.post('/apply/:id', async (req,res) => {
 
   // only students can apply
   if(req.user.isPolitician) {
-    return unauthorized(res)
+    return unauthorized(res,
+      "politicians cannot apply for projects"
+    )
   }
   const { answers } = req.body
   const { _id: userId } = req.user
-  console.log('userId', userId)
 
   const { id: projectId } = req.params
   // check if the project exists
@@ -274,8 +285,12 @@ router.post('/apply/:id', async (req,res) => {
     })
   }
   // otherwise user is applying for such project
+  // check if the applicant has answered all questions
+  if(Object.keys(answers || {}) // if there are no answers, make it as an object for easier checking
+    .some(question => !(question in application.questions))) {
+    return badRequest(res, "some answers to questions are missing")
+  }
   // continue filling out the info
-
   const rawApplication = {
     applicant: ObjectId(userId),
     project: projectId,
