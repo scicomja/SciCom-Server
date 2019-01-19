@@ -24,6 +24,9 @@ const {
  notFound
 } = require('./utils')
 
+const cors = require('cors')
+const _ = require('lodash')
+
 const DATABASE_URL = process.env.database_url || 'localhost'
 const DATABASE_PORT = process.env.database_port || 27017
 const DATABASE_NAME = process.env.database_name || 'scicom'
@@ -36,14 +39,15 @@ app.use(morgan('combined'))
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
+// used for debugging
+app.use(cors())
+
 // endpoints
-app.use('/constants', (_, res) => {
-  const {
-    germanStates, projectStatus, projectType, applicationStatus
-  } = require('./constants')
-  return res.status(200).json({
-    germanStates, projectStatus, projectType, applicationStatus
-  })
+// serving constant values
+app.use('/constants', (req, res) => {
+  const returnFields = "germanStates,projectStatus,projectType,applicationStatus".split(',')
+  const results = _.pick(require('./constants'), returnFields)
+  return res.status(200).json(results)
 })
 app.use('/auth', authRouter)
 app.use('/user', authenticateMiddleware, userRouter)
