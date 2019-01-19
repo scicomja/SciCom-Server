@@ -3,6 +3,8 @@ The server code for the SciCom project.
 
 ## Endpoints
 Developed endpoints are listed below
+- GET /constant, returns a list of constants for forms (e.g. choices for multiple-choice questions)
+
 - /auth
   - POST /register, register
   - POST /login, login
@@ -27,4 +29,3 @@ Developed endpoints are listed below
   - GET /:id, get info of an application, works only if you submitted this application or you are the creator of the project this application is applying for.
   - POST /:id/accept, accept this application
   - POST /:id/reject, reject this application
-
