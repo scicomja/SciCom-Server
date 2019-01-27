@@ -52,12 +52,14 @@ const rawSchema = {
     required: true,
     default: new Date(),
     // make sure if there's "to", it is before that
-    validate: v => !this.to || v < this.to
+    // validate: v => !v.to || new Date(v.from) < new Date(v.to)
   },
   to: {
     type: Date,
     // make sure it is after "from"
-    validate: v => v > this.from
+    // validate: v => {
+    //   return new Date(v.to) > new Date(v.from)
+    // }
   },
   nature: {
     type: String,
@@ -85,6 +87,17 @@ const ProjectSchema = new mongoose.Schema(
 })
 .plugin(lockdown)
 .plugin(require('mongoose-autopopulate'))
+
+ProjectSchema.pre('validate', function(next) {
+  console.log("pre validate", this)
+  if(this.from < new Date()) {
+    return next(new Error("Start date must not be from the past"))
+  }
+  if (this.to && this.from >= this.to) {
+    return next(new Error("To date must be later than from date"))
+  }
+  next()
+})
 
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
