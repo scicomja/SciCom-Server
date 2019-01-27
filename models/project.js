@@ -199,10 +199,14 @@ router.post('/:id', async (req,res) => {
 
   upload(req, res, async err => {
       if(err) return badRequest(res, err)
-      const details = _.pick(req.body, Object.keys(rawSchema))
+      const details = _.pick(req.body, Object.keys(rawSchema).filter(field => {
+        return !("lockdown" in rawSchema[field])
+      }))
+
       Object.keys(details).forEach(field => {
         project.set(field, details[field])
       })
+      console.log('got details', details)
       // modify file name
       if(!req.file) {
         details.file = undefined
