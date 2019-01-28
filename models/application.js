@@ -24,7 +24,8 @@ const rawSchema = {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
     required: true,
-    lockdown: true
+    lockdown: true,
+    autopopulate: true
   },
   status: {
     type: String,
