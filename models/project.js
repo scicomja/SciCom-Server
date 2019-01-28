@@ -200,6 +200,7 @@ router.post('/:id', async (req,res) => {
   upload(req, res, async err => {
       if(err) return badRequest(res, err)
       const details = _.pick(req.body, Object.keys(rawSchema).filter(field => {
+        // filter out those that has a lockdown in the attribute
         return !("lockdown" in rawSchema[field])
       }))
 
@@ -324,6 +325,39 @@ router.post('/apply/:id', async (req,res) => {
     return badRequest(res,e)
   }
 })
+router.post('/open/:id', async (req, res) => {
+  const { id } = req.params
+  const project = await ProjectModel.findOne({
+    _id: id
+  })
+  if(!project) return notFound(res)
+  if(!project.creator._id.equals(req.user._id))
+    return unauthorized(res, "Only creator of the project can open / close it")
+
+  project.set("status", "open")
+  await project.save()
+  return res.status(200).json(
+    {status: 'open', ...project}
+  )
+})
+
+router.post('/close/:id', async (req, res) => {
+  const { id } = req.params
+  const project = await ProjectModel.findOne({
+    _id: id
+  })
+  if(!project) return notFound(res)
+  console.log(project, req.user)
+  if(!project.creator._id.equals(req.user._id))
+    return unauthorized(res, "Only creator of the project can open / close it")
+
+  project.set("status", "closed")
+  await project.save()
+  return res.status(200).json(
+    {status: 'closed', ...project}
+  )
+})
+
 router.post('/bookmark/:id', async (req, res) => {
   if(req.user.isPolitician) {
     return unauthorized(res, "only students can bookmark projects")

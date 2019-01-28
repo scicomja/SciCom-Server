@@ -20,7 +20,8 @@ const germanStates = [
 const projectStatus = [
   "open",
   "active",
-  "completed"
+  "completed",
+  "closed"
 ]
 
 const projectType = [
