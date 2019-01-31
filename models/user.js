@@ -193,7 +193,26 @@ router.post('/:username',
     })
 
 })
-
+/*
+  Get Project of users.
+  - if given username is a politician, return the projects he works on.
+  - if given username is a student, return the applications he is working on
+*/
+router.get('/:username/projects', async (req,res) => {
+  const { username } = req.params
+  const user = await UserModel.findOne({username})
+  if(!user) return notFound(res)
+  const {isPolitician} = user
+  if(isPolitician) {
+    let projects = await ProjectModel.find({creator: user._id})
+    return res.status(200).json(projects)
+  } else {
+    let projects = await ApplicationModel.find({
+      applicant: user._id, status: "accepted"
+    })
+    return res.status(200).json(projects)
+  }
+})
 router.get('*', express.static(userUploadDir))
 module.exports = {
   router,

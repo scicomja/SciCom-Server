@@ -13,6 +13,7 @@ Developed endpoints are listed below
   - GET /, return user's info when no params are given, search for users (available attributes: name) when there are
   - POST /:username, modify user info
   - GET /:username, retrieve user info
+  	- GET /projects, retrieve projects created by this user. If he is a student, retrieve list of applications that he has been accepted.
   - GET /\*, access user media
 
 - /project (JWT required)
