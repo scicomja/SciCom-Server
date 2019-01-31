@@ -28,7 +28,8 @@ const projectType = [
   'internship',
   'thesis',
   'parttime',
-  'voluntary'
+  'voluntary',
+  'quick-question'
 ]
 const applicationStatus = [
   "pending",

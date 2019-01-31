@@ -39,7 +39,7 @@ passport.use(new JWTStrategy({
 ))
 // custom middleware to give json as 403 response
 const authenticateMiddleware = (req, res, next) => {
-  console.log(req.originalUrl)
+  // add exceptions to some of the endpoints
   if(RegExp('^\/project\/[0-9a-f]{24}\/file$').test(req.originalUrl)) {
     return next()
   }

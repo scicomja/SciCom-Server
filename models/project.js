@@ -72,6 +72,7 @@ const rawSchema = {
     default: germanStates[0],
     enum: germanStates
   },
+
   topic: [String],
   salary: {
     type: Number,
@@ -267,7 +268,7 @@ router.get('/', async (req,res) => {
   const results = await ProjectModel.find(queryObject)
     .sort('-createdAt')
     .skip((parseInt(page) - 1) * limit)
-
+    .limit(limit)
   return res.status(200).json(results)
 })
 
@@ -347,7 +348,6 @@ router.post('/close/:id', async (req, res) => {
     _id: id
   })
   if(!project) return notFound(res)
-  console.log(project, req.user)
   if(!project.creator._id.equals(req.user._id))
     return unauthorized(res, "Only creator of the project can open / close it")
 
@@ -368,23 +368,31 @@ router.post('/bookmark/:id', async (req, res) => {
     _id: projectId
   })
   if(!project) return notFound(res)
+  // check if there we have the bookmark
+  const { model: UserModel } = require('./user')
+  const { username } = req.user
+  const result = await UserModel.findOne({
+    username,
+    bookmarks: projectId
+  })
 
-  const remainingBookmarks = req.user.bookmarks
-      .filter(bm => !bm._id.equals(projectId))
-  const ids = remainingBookmarks.map(bm => bm._id)
-  if(remainingBookmarks.length != req.user.bookmarks.length) {
-    // bookmark already exists
-    req.user.set("bookmarks", ids)
-    await req.user.save()
-    return res.status(200).json(remainingBookmarks)
+  if(!result) {
+    // the bookmark isn't there, add it.
+    await UserModel.findOneAndUpdate({ username }, {
+      $push: {bookmarks: ObjectId(projectId)}
+    })
+    return res.status(201).json({
+      "message": "bookmark added"
+    })
   } else {
-    // bookmark hasnt been added.
-    ids.push(ObjectId(projectId))
-    req.user.set("bookmarks", ids)
-    await req.user.save()
-    return res.status(200).json([...remainingBookmarks, project])
+    // bookmark is there, remove it.
+    await UserModel.findOneAndUpdate({ username }, {
+      $pull: {bookmarks: ObjectId(projectId)}
+    })
+    return res.status(200).json({
+      message: "bookmark removed"
+    })
   }
-
 })
 // the rest is for serving the file of the projects
 router.get('*', express.static(projectDir))
