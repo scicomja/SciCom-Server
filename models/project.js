@@ -351,13 +351,34 @@ router.post('/close/:id', async (req, res) => {
   if(!project.creator._id.equals(req.user._id))
     return unauthorized(res, "Only creator of the project can open / close it")
 
-  project.set("status", "closed")
-  await project.save()
+  const result = await ProjectModel.findOneAndUpdate({
+    _id:id
+  }, {"status": "closed"})
   return res.status(200).json(
-    {status: 'closed', ...project}
+    {status: 'closed', ...result._doc}
   )
 })
 
+// endpoint for marking a project as "completed"
+router.post('/complete/:id', async (req, res) => {
+  const { id } = req.params
+  const project = await ProjectModel.findOne({
+    _id: id
+  })
+  if(!project) return notFound(res)
+  if(!project.creator._id.equals(req.user._id))
+    return unauthorized(res, "Only creator of the project can open / close it")
+
+  if(project.status !== "closed") {
+    return badRequest(res, "Project cannot be completed if it is not closed")
+  }
+
+  const result = await ProjectModel.findOneAndUpdate({
+    _id: id
+  }, {"status": "completed"})
+
+  return res.status(200).json(result._doc)
+})
 router.post('/bookmark/:id', async (req, res) => {
   if(req.user.isPolitician) {
     return unauthorized(res, "only students can bookmark projects")
