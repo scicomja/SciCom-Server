@@ -256,6 +256,7 @@ router.get('/', async (req,res) => {
       return res.status(200).json(appliedProjects)
     }
   }
+  /******** QUERY *********/
   if(!validateParameters(query)) {
     return badRequest(res, {message: "invalid query"})
   }
@@ -264,12 +265,12 @@ router.get('/', async (req,res) => {
   const queryObject = constructQuery(query)
   // pagination settings
   // check the types one by one
-
+  const numProjects = await ProjectModel.count()
   const results = await ProjectModel.find(queryObject)
     .sort('-createdAt')
     .skip((parseInt(page) - 1) * limit)
     .limit(limit)
-  return res.status(200).json(results)
+  return res.status(200).json({results, total: numProjects})
 })
 
 // submit an application to a project
