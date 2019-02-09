@@ -11,10 +11,17 @@ const {
   badRequest,
   escapeForRegex
 } = require('../utils')
+
+const {
+  validateParameters,
+  constructQuery
+} = require('./validator/user')
+
 const {
   unauthorized, notFound
 } = require('../utils')
 const { userUploadDir } = require('../constants')
+
 const { model: ApplicationModel } = require('./application')
 const { model: ProjectModel } = require('./project')
 
@@ -140,19 +147,30 @@ const UserModel = mongoose.model('User', UserSchema)
   means only the "name" field will be considered
 */
 router.get('/', async (req, res) => {
-  const { name } = req.query
+  const fields = "name,title,isPolitician,position,state,city,major".split(',')
+  const query = _.pick(req.query, fields)
+
+  if(_.isEmpty(query)) {
+    return res.status(200).json(req.user)
+  }
+
+  if(!validateParameters(query)) {
+    return badRequest(res, {message: "invalid query"})
+  }
+
+  const finalQuery = constructQuery(query)
   // return the user itself if no parameters are given
-  if(!name) return res.status(200).json(req.user)
-  const searchString = escapeForRegex(name)
-  const searchOption = {$regex: searchString}
-  const users = await UserModel.find({
-    $or: [
-      {"firstName": searchOption},
-      {"lastName": searchOption},
-      {"username": searchOption}
-    ]
-  })
-  return res.status(200).json(users)
+  const { page = 1 } = req.query
+  const limit = 10
+
+  const numUsers = await UserModel.find(finalQuery).count()
+  const numPages = Math.floor(numUsers / limit)
+  const results = await UserModel.find(finalQuery)
+    .sort('name')
+    .skip((parseInt(page) - 1) * limit)
+    .limit(limit)
+
+  return res.status(200).json({ results, total: numPages})
 })
 
 // info for particular users

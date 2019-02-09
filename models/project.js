@@ -261,16 +261,22 @@ router.get('/', async (req,res) => {
     return badRequest(res, {message: "invalid query"})
   }
   const {page} = req.query
+  // pagination settings
   const limit = 10
   const queryObject = constructQuery(query)
-  // pagination settings
-  // check the types one by one
-  const numProjects = await ProjectModel.count()
+
+  // count total number of results
+  const numProjects = await ProjectModel.find(queryObject).count()
+  // get number of pages according to the limit
+  const numPages = Math.floor(numProjects / limit)
+  // actually get the results from query, sort and skip accordingly
   const results = await ProjectModel.find(queryObject)
     .sort('-createdAt')
     .skip((parseInt(page) - 1) * limit)
     .limit(limit)
-  return res.status(200).json({results, total: numProjects})
+  console.log('num projects and pages', numProjects, numPages)
+  // then return results
+  return res.status(200).json({results, total: numPages})
 })
 
 // submit an application to a project

@@ -17,6 +17,7 @@ const validateParameters = (query) => {
     return false
   }
   if(page && !isPositiveInteger(page)) {
+    
     return false
   }
   if(salary && !isNumber(salary)) {
