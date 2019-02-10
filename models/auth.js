@@ -16,6 +16,9 @@ const jwt = require("jsonwebtoken")
 const ExtractJwt = require('passport-jwt').ExtractJwt
 const SECRET = process.env.secret || "SOME SECRET"
 const { unauthorized, badRequest } = require('../utils')
+const EmailValidator = require('email-validator')
+const swot = require("swot-js")()
+
 // configure authentication strategy
 passport.use(new JWTStrategy({
         jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
@@ -59,18 +62,21 @@ const signUser = (username) => jwt.sign({ username }, SECRET, {})
 
 router.post('/register', async (req, res) => {
   const info = req.body
+
   if(!info) {
     return res.status(400).json({
       error: "missing post data"
     })
   }
+
+  const {username, email, password, isPolitician} = info
+
   // check compulsory fields
   if(compulsoryFields.some(f => !(f in info))) {
     return res.status(400).json({
       error: "missing one of username or password fields"
     })
   }
-  const {username, email, password, isPolitician} = info
   // check if user exists
   const existUsers = await UserModel.find({username})
   if(existUsers.length > 0) {
@@ -78,7 +84,21 @@ router.post('/register', async (req, res) => {
       error: "user with the same username exists"
     })
   }
+  // check if email is valid
+  if(!EmailValidator.validate(email)) {
+	  return res.status(400).json({
+	  	error: "Email is not valid"
+	  })
+  }
+  // additionally, if he is a student, check student's email address
+  if(!isPolitician && !swot.check(email)) {
+  	return res.status(400).json({
+		error: "Provided email is not a student account"
+	})
+  }
+
   const token = signUser(username)
+
   try {
     const result = await UserModel.create({
       username,
