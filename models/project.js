@@ -123,7 +123,23 @@ router.get('/:id', async (req,res) => {
   return res.status(200).json(project)
 })
 
-
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params
+  const { _id: userId } = req.user
+  const project = await ProjectModel.findOne({_id: id})
+  if(!project) return notFound(res)
+  if(!userId.equals(project.creator._id)) {
+    return unauthorized(res, "Only creator of the project can delete it.")
+  }
+  const result = await ProjectModel.findByIdAndRemove(project._id)
+  const { model: ApplicationModel } = require('./application')
+  const appResult = await ApplicationModel.deleteMany({
+    project: project._id
+  })
+  return res.status(200).json({
+    "status": "deleted"
+  })
+})
 // configure storage options
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

@@ -20,10 +20,14 @@ Developed endpoints are listed below
   - GET /, list users' projects when no params are given, search for projects (available attributes: title, status, nature, salary,  from,  page) when there are
   - POST /, create a new project
   - POST /complete/:id, mark project as completed. Only works if you are the owner of the project and the status of the project is "closed".
+  - POST /bookmark/:id, bookmark / un-bookmark project with given ID
+  - POST /open/:id, (re)open this project, only project creator can do it
+  - POST /close/:id, close this project, only project creator can do it
   - POST /apply/:id, apply / un-apply for the project with given ID
   - /:id
 	  - POST /, modify project info
 	  - GET  /, get project info, if user is the project creator he will see extra list of applications
+	  - DELETE /, delete this project. Only project creator can do this.
   - GET /\*, access project media
 
 - /application (JWT required)
