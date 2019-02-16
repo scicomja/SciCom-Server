@@ -181,30 +181,32 @@ router.get('/:username', async (req, res) => {
   return res.status(200).json(user)
 })
 
-router.post('/:username',
+router.post('/',
   async (req, res) => {
-    // first check if the user is modifying info of himself
-    const { username } = req.params
-    // additional check: besides logged in , he has to be the same user
-    if (req.user.username !== username) {
-      return unauthorized(res)
-    }
+    // get the username of this guy
+    const { isPolitician, username } = req.user
 
     // parsing params
-    const normalFields = _.differenceWith(optionalFields, fileFields, _.isEqual)
-
+    let updatableFields = "firstName,lastName,phone,website,linkedIn,city,state,title".split(',')
+    // additional fields according to the user's role
+    if(isPolitician) {
+    	updatableFields.concat(["position"])
+    } else {
+    	updatableFields.concat("major,university".split(','))
+    }
     // for each file, we append a field
     upload(req, res, async err => {
       if(err) return badRequest(res, err)
       // append the field
-      const info = _.pick(req.body, normalFields)
+      let info = _.pick(req.body, updatableFields)
       fileFields.forEach(f => {
         if(!req.files) return
         if(f in req.files) info[f] = `uploads/${username}/${f}`
       })
+      
       // and update the rest of the models
       const result = await UserModel.findOneAndUpdate(
-        {username}, info,
+        {username}, { $set: info },
         { runValidators: true })
 
       return res.status(200).json(info)
