@@ -181,6 +181,9 @@ router.get('/:username', async (req, res) => {
   return res.status(200).json(user)
 })
 
+/*
+  Update user info
+*/
 router.post('/',
   async (req, res) => {
     // get the username of this guy
@@ -190,25 +193,31 @@ router.post('/',
     let updatableFields = "firstName,lastName,phone,website,linkedIn,city,state,title".split(',')
     // additional fields according to the user's role
     if(isPolitician) {
-    	updatableFields.concat(["position"])
+    	updatableFields = updatableFields.concat(["position"])
     } else {
-    	updatableFields.concat("major,university".split(','))
+    	updatableFields = updatableFields.concat("major,university".split(','))
     }
     // for each file, we append a field
     upload(req, res, async err => {
       if(err) return badRequest(res, err)
       // append the field
+      console.log('fields', updatableFields)
+      console.log('body', req.body)
       let info = _.pick(req.body, updatableFields)
       fileFields.forEach(f => {
         if(!req.files) return
         if(f in req.files) info[f] = `uploads/${username}/${f}`
       })
-      
+      // special treatment for "major" since it is an array
+      if("major" in info) {
+        info.major = info.major.split(',')
+      }
+      console.log('info', info)
       // and update the rest of the models
       const result = await UserModel.findOneAndUpdate(
         {username}, { $set: info },
         { runValidators: true })
-
+      console.log('result', result)
       return res.status(200).json(info)
     })
 
