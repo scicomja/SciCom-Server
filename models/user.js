@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
     const dir = `uploads/${req.user.username}`
     // create this directory if not exist
     if(!fs.existsSync(dir)) {
-      fs.mkdirSync('')
+      fs.mkdirSync(userUploadDir)
     }
     if(!fs.existsSync(dir)) {
       fs.mkdirSync(dir)
