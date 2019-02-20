@@ -40,7 +40,12 @@ const storage = multer.diskStorage({
   },
 
   filename: function (req, file, cb) {
-    cb(null, `${file.fieldname}.${_.last(file.mimetype.split('/'))}`)
+    let fileName = file.fieldname
+    // if what is uploading isn't CV, then just strip out the suffix...
+    if (fileName == 'CV') {
+      fileName = `${file.fieldname}.${_.last(file.mimetype.split('/'))}`
+    }
+    cb(null, fileName)
   }
 })
 const router = express.Router()
@@ -245,6 +250,20 @@ router.get('/:username/projects', async (req,res) => {
     return res.status(200).json(projects)
   }
 })
+
+// force the mimetype to be image since this is an avatar
+router.get('/:username/avatar', async (req, res) => {
+  const filePath = path.resolve(
+    userUploadDir,
+    `${req.params.username}`, 'avatar')
+    console.log('file path:', filePath)
+  fs.readFile(filePath, (err, data) => {
+    if(err) return notFound(res)
+    res.contentType('image/png')
+    res.send(data)
+  })
+})
+
 router.get('*', express.static(userUploadDir))
 module.exports = {
   router,

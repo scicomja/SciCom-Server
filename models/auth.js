@@ -43,7 +43,12 @@ passport.use(new JWTStrategy({
 // custom middleware to give json as 403 response
 const authenticateMiddleware = (req, res, next) => {
   // add exceptions to some of the endpoints
+  // no authorization required for files for project.
   if(RegExp('^\/project\/[0-9a-f]{24}\/file$').test(req.originalUrl)) {
+    return next()
+  }
+  // no authorization required for CV or avatar
+  if(RegExp('^\/user\/.*\/(CV|avatar)$').test(req.originalUrl)) {
     return next()
   }
   // if(req.path == '/project/')
