@@ -27,8 +27,12 @@ const { model: ProjectModel } = require('./project')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+
     const dir = `uploads/${req.user.username}`
     // create this directory if not exist
+    if(!fs.existsSync(dir)) {
+      fs.mkdirSync('')
+    }
     if(!fs.existsSync(dir)) {
       fs.mkdirSync(dir)
     }
