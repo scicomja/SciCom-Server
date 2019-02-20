@@ -27,7 +27,7 @@ const { model: ProjectModel } = require('./project')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = `uploads/${req.params.username}`
+    const dir = `uploads/${req.user.username}`
     // create this directory if not exist
     if(!fs.existsSync(dir)) {
       fs.mkdirSync(dir)
@@ -36,7 +36,7 @@ const storage = multer.diskStorage({
   },
 
   filename: function (req, file, cb) {
-    cb(null, file.fieldname)
+    cb(null, `${file.fieldname}.${_.last(file.mimetype.split('/'))}`)
   }
 })
 const router = express.Router()
@@ -201,12 +201,12 @@ router.post('/',
     upload(req, res, async err => {
       if(err) return badRequest(res, err)
       // append the field
-      console.log('fields', updatableFields)
       console.log('body', req.body)
       let info = _.pick(req.body, updatableFields)
       fileFields.forEach(f => {
+        console.log(`username`, username)
         if(!req.files) return
-        if(f in req.files) info[f] = `uploads/${username}/${f}`
+        if(f in req.files) info[f] = `${username}/${f}`
       })
       // special treatment for "major" since it is an array
       if("major" in info) {
@@ -217,7 +217,6 @@ router.post('/',
       const result = await UserModel.findOneAndUpdate(
         {username}, { $set: info },
         { runValidators: true })
-      console.log('result', result)
       return res.status(200).json(info)
     })
 
