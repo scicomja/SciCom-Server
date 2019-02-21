@@ -221,7 +221,7 @@ router.post('/',
         if(!_.isArray(info.major)) {
           info.major = [info.major]
         }
-        info.major = info.major.split(',')
+        // info.major = info.major.split(',')
       } else {
         info.major = []
       }
