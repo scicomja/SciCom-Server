@@ -108,6 +108,7 @@ router.get('/:id', async (req,res) => {
   const { _id: userId } = req.user
   const project = await ProjectModel.findOne({_id: id})
   if(!project) return notFound(res)
+  console.log('get project', project)
   if(userId.equals(project.creator._id)) {
     const { model: ApplicationModel } = require('./application')
     // This is the creator of the project
@@ -117,7 +118,7 @@ router.get('/:id', async (req,res) => {
     })
     return res.status(200).json({
       ...project._doc, // otherwise it gives away lots of internal stuff when spreading
-      applications: applicationsReceived
+      applications: applicationsReceived,
     })
   }
   return res.status(200).json(project)
@@ -193,6 +194,7 @@ router.post('/',
         if(req.file) {
           details.file = `${projectDir}${req.params.id}`
         }
+        console.log('details', details)
         // mark the creator and id of the project
         details.creator = req.user._id
         details._id = req.params.id
@@ -220,11 +222,10 @@ router.post('/:id', async (req,res) => {
         // filter out those that has a lockdown in the attribute
         return !("lockdown" in rawSchema[field])
       }))
-
+      console.log('details,', details)
       Object.keys(details).forEach(field => {
         project.set(field, details[field])
       })
-      console.log('got details', details)
       // modify file name
       if(!req.file) {
         details.file = undefined
@@ -290,7 +291,6 @@ router.get('/', async (req,res) => {
     .sort('-createdAt')
     .skip((parseInt(page) - 1) * limit)
     .limit(limit)
-  console.log('num projects and pages', numProjects, numPages)
   // then return results
   return res.status(200).json({results, total: numPages})
 })
@@ -331,8 +331,9 @@ router.post('/apply/:id', async (req,res) => {
   }
   // otherwise user is applying for such project
   // check if the applicant has answered all questions
-  if(Object.keys(answers || {}) // if there are no answers, make it as an object for easier checking
-    .some(question => !(question in application.questions))) {
+  if(project.questions // if there are no answers, make it as an object for easier checking
+    .some(question => !Object.keys(answers || {}).includes(question))) {
+      console.log('bad request:', Object.keys(answers || []), project.questions)
     return badRequest(res, "some answers to questions are missing")
   }
   // continue filling out the info
@@ -341,6 +342,7 @@ router.post('/apply/:id', async (req,res) => {
     project: projectId,
     answers
   }
+  console.log('application:', rawApplication)
   const newApplication = new ApplicationModel(rawApplication)
   try {
     await newApplication.save()

@@ -210,18 +210,22 @@ router.post('/',
     upload(req, res, async err => {
       if(err) return badRequest(res, err)
       // append the field
-      console.log('body', req.body)
       let info = _.pick(req.body, updatableFields)
       fileFields.forEach(f => {
-        console.log(`username`, username)
         if(!req.files) return
         if(f in req.files) info[f] = `${username}/${f}`
       })
       // special treatment for "major" since it is an array
       if("major" in info) {
+        // turn the "major" field to an array if it is not...
+        if(!_.isArray(info.major)) {
+          info.major = [info.major]
+        }
         info.major = info.major.split(',')
+      } else {
+        info.major = []
       }
-      console.log('info', info)
+
       // and update the rest of the models
       const result = await UserModel.findOneAndUpdate(
         {username}, { $set: info },
@@ -256,7 +260,6 @@ router.get('/:username/avatar', async (req, res) => {
   const filePath = path.resolve(
     userUploadDir,
     `${req.params.username}`, 'avatar')
-    console.log('file path:', filePath)
   fs.readFile(filePath, (err, data) => {
     if(err) return notFound(res)
     res.contentType('image/png')

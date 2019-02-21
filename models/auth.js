@@ -48,7 +48,7 @@ const authenticateMiddleware = (req, res, next) => {
     return next()
   }
   // no authorization required for CV or avatar
-  if(RegExp('^\/user\/.*\/(CV|avatar)$').test(req.originalUrl)) {
+  if(RegExp('^\/user\/.*\/(CV\.pdf|avatar)$').test(req.originalUrl)) {
     return next()
   }
   // if(req.path == '/project/')

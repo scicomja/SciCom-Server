@@ -38,17 +38,6 @@ const rawSchema = {
     of: String,
     required: true,
     default: [],
-    // check answers to each of the questions are there
-    // validate: {
-    //   validator: async function (v) {
-    //     console.log('in validator', this.project)
-    //     const proejct = await ProjectModel.findOne({_id: this.project})
-    //     if(!project) return false
-    //     console.log('validate projects', project)
-    //     return Object.keys(v).every(q => (q in project.questions))
-    //   },
-    //   message: "All questions from projects should be answered"
-    // }
   }
 }
 
