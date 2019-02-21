@@ -44,7 +44,7 @@ passport.use(new JWTStrategy({
 const authenticateMiddleware = (req, res, next) => {
   // add exceptions to some of the endpoints
   // no authorization required for files for project.
-  if(RegExp('^\/project\/[0-9a-f]{24}\/file$').test(req.originalUrl)) {
+  if(RegExp('^\/project\/[0-9a-f]{24}\/.*\.(pdf|jpg|jpeg|gif|png|tiff)').test(req.originalUrl)) {
     return next()
   }
   // no authorization required for CV or avatar
