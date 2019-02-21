@@ -191,8 +191,11 @@ router.post('/',
     upload(req, res, async err => {
         if(err) return badRequest(res, err)
         const details = _.pick(req.body, Object.keys(rawSchema))
+        console.log('req.file', req.file)
         if(!_.isEmpty(req.file)) {
           details.file = req.file.filename
+        } else {
+          details.file = undefined
         }
         // mark the creator and id of the project
         details.creator = req.user._id
@@ -231,7 +234,7 @@ router.post('/:id', async (req,res) => {
         fileField = `${req.file.filename}`
       }
       project.set('file', fileField)
-      
+
       try {
         project.save()
         return res.status(200).json(details)
