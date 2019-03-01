@@ -190,6 +190,18 @@ router.get('/:username', async (req, res) => {
   return res.status(200).json(user)
 })
 
+router.delete('/',
+  async (req, res) => {
+    const { username, _id, isPolitician } = req.user
+    console.log('deleting user', username, _id)
+    const deleteResult = await UserModel.findOneAndDelete({ username })
+    let deleteQuery = ApplicationModel.find({ applicant: _id}).remove
+    if(isPolitician) {	
+    	deleteQuery = ProjectModel.find({ creator: _id}).remove
+    }
+    deleteQuery().then( _ => res.json({ 'status': 'deleted'}))
+  }
+)
 /*
   Update user info
 */
