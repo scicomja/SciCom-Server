@@ -14,8 +14,6 @@ const validateParameters = (query) => {
     major, position,
     state, city
   } = query
-  console.log('validating with state', state)
-  console.log('in german states:', state in germanStates)
   if(state && germanStates.indexOf(state) == -1) {
     return false
   }
@@ -26,7 +24,7 @@ const addRegexTerm = (result, query, field) => {
   if(!(field in query)) return result
   return {
     ...result,
-    [field]: {$regex: escapeForRegex(query[field])}
+    [field]: {$regex: escapeForRegex(query[field]), $options: 'i'}
   }
 }
 

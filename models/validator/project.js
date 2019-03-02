@@ -29,7 +29,7 @@ const addRegexTerm = (result, query, field) => {
   if(!(field in query)) return result
   return {
     ...result,
-    [field]: {$regex: escapeForRegex(query[field])}
+    [field]: {$regex: escapeForRegex(query[field]), $options: 'i'}
   }
 }
 
@@ -42,6 +42,7 @@ const addExactTerm = (result, query, field) => {
 }
 // return mongoose-recognizable queries
 const constructQuery = (query) => {
+  console.log('receiving query', query)
   const {
     title,status,nature,salary,from
   } = query
@@ -63,7 +64,7 @@ const constructQuery = (query) => {
   if(from) {
     result["from"] = {$gte: new Date(from)}
   }
-
+  console.log('final query', result)
   return result
 }
 

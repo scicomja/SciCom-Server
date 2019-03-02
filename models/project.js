@@ -269,7 +269,7 @@ router.post('/:id', async (req,res) => {
 */
 router.get('/', async (req,res) => {
   // extract query
-  const recognizedParams = "title,status,nature,salary,from,page".split(',')
+  const recognizedParams = "title,status,nature,tags,salary,from,page".split(',')
   const query = _.pick(req.query, recognizedParams)
 
   if(Object.keys(query).length === 0) {
