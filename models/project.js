@@ -73,7 +73,7 @@ const rawSchema = {
     enum: germanStates
   },
 
-  topic: [String],
+  tags: [String],
   salary: {
     type: Number,
     default: 0,
