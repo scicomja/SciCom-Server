@@ -17,7 +17,7 @@ const validateParameters = (query) => {
     return false
   }
   if(page && !isPositiveInteger(page)) {
-    
+
     return false
   }
   if(salary && !isNumber(salary)) {
@@ -48,7 +48,7 @@ const constructQuery = (query) => {
 
   let result = {}
   // add all regex term...
-  result = "title,topic".split(',').reduce(
+  result = "title,tags".split(',').reduce(
     (res, field) => addRegexTerm(res,query, field),
     result)
 
@@ -57,17 +57,6 @@ const constructQuery = (query) => {
     (res, field) => addExactTerm(res, query, field),
     result)
 
-  // if(title) {
-  //   result["title"] = {
-  //     "$regex": escapeForRegex(title)
-  //   }
-  // }
-  // if(status) {
-  //   result["status"] = status
-  // }
-  // if(nature) {
-  //   result["nature"] = nature
-  // }
   if(salary) {
     result["salary"] = {$gte: parseFloat(salary)}
   }

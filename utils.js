@@ -38,7 +38,7 @@ const isInteger = n => {
   return isNumber(num) && (num | 0) === num
 }
 
-const escapeForRegex = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+const escapeForRegex = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/ig, '\\$&')
 
 const isPositiveInteger = n => isInteger(n) && parseFloat(n) > 0
 module.exports = {

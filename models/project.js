@@ -56,10 +56,6 @@ const rawSchema = {
   },
   to: {
     type: Date,
-    // make sure it is after "from"
-    // validate: v => {
-    //   return new Date(v.to) > new Date(v.from)
-    // }
   },
   nature: {
     type: String,
