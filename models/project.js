@@ -100,6 +100,26 @@ ProjectSchema.pre('validate', function(next) {
   next()
 })
 
+// before removing a project, delete all the applications and bookmarks to it.
+ProjectSchema.pre('remove', async function(next) {
+  const { _id } = this
+  const { model: ApplicationModel } = require('./application')
+  const { model: UserModel } = require('./user')
+  // remove all applications to this project
+  const appResult = await ApplicationModel.deleteMany({
+    project: _id
+  })
+  // remove all bookmarks from students' bookmarks
+  const bookmarkResult = await UserModel.updateMany({
+    isPolitician: false
+  }, {
+    $pullAll: {
+      bookmarks: [_id]
+    }
+  })
+  next()
+})
+
 const ProjectModel = mongoose.model('Project', ProjectSchema)
 // endpoints
 
@@ -132,11 +152,8 @@ router.delete('/:id', async (req, res) => {
   if(!userId.equals(project.creator._id)) {
     return unauthorized(res, "Only creator of the project can delete it.")
   }
-  const result = await ProjectModel.findByIdAndRemove(project._id)
-  const { model: ApplicationModel } = require('./application')
-  const appResult = await ApplicationModel.deleteMany({
-    project: project._id
-  })
+  await project.remove()
+
   return res.status(200).json({
     "status": "deleted"
   })
@@ -309,7 +326,8 @@ router.post('/apply/:id', async (req,res) => {
       "politicians cannot apply for projects"
     )
   }
-  const { answers } = req.body
+  let { answers } = req.body
+  if(!answers ) answers = [] // answers cannot be null when inserting applications
   const { _id: userId } = req.user
 
   const { id: projectId } = req.params
@@ -333,7 +351,7 @@ router.post('/apply/:id', async (req,res) => {
   }
   // otherwise user is applying for such project
   // check if the applicant has answered all questions
-  if(project.questions // if there are no answers, make it as an object for easier checking
+  if(project.questions.length && project.questions // if there are no answers, make it as an object for easier checking
     .some(question => !Object.keys(answers || {}).includes(question))) {
       console.log('bad request:', Object.keys(answers || []), project.questions)
     return badRequest(res, "some answers to questions are missing")
@@ -350,6 +368,7 @@ router.post('/apply/:id', async (req,res) => {
     await newApplication.save()
     return res.status(201).json(rawApplication)
   } catch(e) {
+    console.log('error in creating application', e)
     return badRequest(res,e)
   }
 })

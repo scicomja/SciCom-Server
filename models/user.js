@@ -147,6 +147,19 @@ UserSchema.pre('save', function(next) {
     })
 })
 
+UserSchema.pre('remove', async function(next) {
+  console.log('pre remove user hook', this)
+  const { bookmarks = [], _id, isPolitician } = this
+  if(isPolitician) {
+    const removeProjects = await ProjetModel.find({ creator: _id }).remove()
+  } else {
+    const applications = await ApplicationModel.find({
+      applicant: _id
+    }).remove()
+  }
+  next()
+})
+
 const UserModel = mongoose.model('User', UserSchema)
 
 // endpoints
@@ -193,13 +206,13 @@ router.get('/:username', async (req, res) => {
 router.delete('/',
   async (req, res) => {
     const { username, _id, isPolitician } = req.user
-    console.log('deleting user', username, _id)
-    const deleteResult = await UserModel.findOneAndDelete({ username })
-    let deleteQuery = ApplicationModel.find({ applicant: _id}).remove
-    if(isPolitician) {	
-    	deleteQuery = ProjectModel.find({ creator: _id}).remove
+    try {
+      const deleteResult = await UserModel.findOneAndDelete({ username })
+      return res.json({ status: 'removed' })
+    } catch(err) {
+      return badRequest(res, "failed to remove user")
     }
-    deleteQuery().then( _ => res.json({ 'status': 'deleted'}))
+    return res.json({ 'status': 'deleted'})
   }
 )
 /*
