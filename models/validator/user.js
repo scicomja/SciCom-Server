@@ -14,8 +14,9 @@ const validateParameters = (query) => {
     major, position,
     state, city
   } = query
-
-  if(state && !(state in germanStates)) {
+  console.log('validating with state', state)
+  console.log('in german states:', state in germanStates)
+  if(state && germanStates.indexOf(state) == -1) {
     return false
   }
   return true // thats all for now
@@ -51,6 +52,11 @@ const constructQuery = (query) => {
   }
   if('isPolitician' in query) {
     result.isPolitician = query.isPolitician
+  }
+
+  // exact search term for 'state'
+  if('state' in query) {
+    result.state = query.state
   }
 
   return result
