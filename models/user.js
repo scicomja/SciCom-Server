@@ -148,15 +148,22 @@ UserSchema.pre('save', function(next) {
 })
 
 UserSchema.pre('remove', async function(next) {
-  console.log('pre remove user hook', this)
-  const { bookmarks = [], _id, isPolitician } = this
-  if(isPolitician) {
-    const removeProjects = await ProjetModel.find({ creator: _id }).remove()
-  } else {
-    const applications = await ApplicationModel.find({
-      applicant: _id
-    }).remove()
+  const { model: ApplicationModel } = require('./application')
+  const { model: ProjectModel } = require('./project')
+  const { _id, isPolitician } = this
+  try {
+    if(isPolitician) {
+      const removeProjects = await ProjectModel.find({ creator: _id })
+      removeProjects.forEach(async project => { await project.remove() })
+    } else {
+      const applications = await ApplicationModel.find({
+        applicant: _id
+      }).remove()
+    }
+  } catch(err) {
+    next(err)
   }
+
   next()
 })
 
@@ -207,7 +214,8 @@ router.delete('/',
   async (req, res) => {
     const { username, _id, isPolitician } = req.user
     try {
-      const deleteResult = await UserModel.findOneAndDelete({ username })
+      const userToRemove = await UserModel.findOne({ username })
+      await userToRemove.remove()
       return res.json({ status: 'removed' })
     } catch(err) {
       return badRequest(res, "failed to remove user")
