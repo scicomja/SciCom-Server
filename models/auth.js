@@ -148,6 +148,56 @@ router.post('/login', async (req, res) => {
       }
   )
 })
+
+/*
+  Endpoint for changing password
+  takes: {
+    originalPassword: String,
+    newPassword: String,
+  }
+*/
+router.post('/changePassword',
+  authenticateMiddleware,  // requires authentication here
+  async (req,res) => {
+    const { username } = req.user
+    const { originalPassword, newPassword } = req.body
+    if(!originalPassword || !newPassword) {
+      return badRequest(res,
+        {error: "Missing required field"}
+      )
+    }
+    // get the hased existing password
+    const {password: realPassword} = await UserModel.findOne({
+      username
+    }).select({ password: 1 })
+    bcrypt.compare(
+      originalPassword, realPassword,
+      async (err, isMatch) => {
+        if(err || !isMatch)
+          return unauthorized(res, "Password is not correct")
+        // the password is right, now update it
+        try {
+          const user = await UserModel.findOne({
+            username
+          })
+            .select({password: 1})
+	  user.password = newPassword
+	  const result = await user.save()
+          return res.status(200).json({
+            status: 'ok'
+          })
+        } catch(err) {
+          return res.status(500).json({
+            status: 'error'
+          })
+        }
+      }
+    )
+
+
+
+  }
+)
 module.exports = {
   router,
   authenticateMiddleware
