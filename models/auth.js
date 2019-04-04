@@ -188,7 +188,7 @@ router.post('/changePassword',
           })
         } catch(err) {
           return res.status(500).json({
-            status: 'error'
+	    error: 'internal server error'
           })
         }
       }
