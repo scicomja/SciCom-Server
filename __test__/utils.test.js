@@ -10,13 +10,6 @@ describe("containsString", () => {
 		expect(containsString(sampleString, subString.toUpperCase())).toBe(true)
 	})
 
-	it("should detect substring at the beginning of the string", () => {
-		const subString = "abc"
-		// detects substring in case-sensitive mode
-		expect(containsString(sampleString, subString)).toBe(true)
-		expect(containsString(sampleString, subString.toUpperCase())).toBe(true)
-	})
-
 	it("should take case sensitive flag into account", () => {
 		const subString = "dEF"
 
@@ -50,18 +43,18 @@ describe("randomString", () => {
 
 describe("number misc.", () => {
 	const { isNumber, isInteger, isPositiveInteger } = require("../utils")
-
+	const testSuite = (number, ans1, ans2, ans3) => {
+		expect(isNumber(number)).toBe(ans1)
+		expect(isInteger(number)).toBe(ans2)
+		expect(isPositiveInteger(number)).toBe(ans3)
+	}
 	it("should tell a number as a number", () => {
 		const number = "10"
-		expect(isNumber(number)).toBe(true)
-		expect(isInteger(number)).toBe(true)
-		expect(isPositiveInteger(number)).toBe(true)
+		return testSuite(number, true, true, true)
 	})
 
 	it("shoul test a float apart", () => {
 		const number = "3.14"
-		expect(isNumber(number)).toBe(true)
-		expect(isInteger(number)).toBe(false)
-		expect(isPositiveInteger(number)).toBe(false)
+		return testSuite(number, true, false, false)
 	})
 })
