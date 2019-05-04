@@ -17,6 +17,7 @@ const EmailValidator = require("email-validator")
 const swot = require("swot-js")()
 
 const { sendResetPasswordEmail } = require("../mail")
+const { TokenModel } = require("./token")
 
 // configure authentication strategy
 passport.use(
@@ -198,20 +199,19 @@ router.post(
 
 */
 router.post("/resetPassword", async (req, res) => {
+	console.log("reset password!")
 	const { email } = req.body
 	const foundUser = await UserModel.findOne({ email })
-	// there is no such user with this email. do nothing
+	// if there is no such user with this email. do nothing
 	// because otherwise people can use this to spoof which email address is registered.
 	if (!foundUser) return res.json({})
+	// the user is found.
 	const { username } = foundUser
 	try {
-		// TODO: this
-		// const token = await
-		const info = await sendResetPasswordEmail({
-			account: { username, email }
-			// token:
+		TokenModel.sendResetPasswordEmail({
+			account: { username, email },
+			token
 		})
-
 		return res.json({})
 	} catch (err) {
 		return res.json({})

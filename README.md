@@ -1,6 +1,7 @@
 # SciCom Backend
 The server code for the SciCom project.
 
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 [![Maintainability](https://api.codeclimate.com/v1/badges/01c090f8ca023699816d/maintainability)](https://codeclimate.com/github/travistang/SciCom-Server/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/01c090f8ca023699816d/test_coverage)](https://codeclimate.com/github/travistang/SciCom-Server/test_coverage)
 
