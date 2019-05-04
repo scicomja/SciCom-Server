@@ -7,7 +7,7 @@
 		"node": "10.x"
 	},
 	"scripts": {
-		"test": "jest --converage --verbose && cc-test-reporter format-coverage && cc-test-reporter upload-coverage -r ${REPORTER_URL}"
+		"test": "jest --coverage  && cc-test-reporter format-coverage && cc-test-reporter upload-coverage -r ${REPORTER_URL}"
 	},
 	"author": "",
 	"license": "ISC",

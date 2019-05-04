@@ -50,6 +50,7 @@ const escapeForRegex = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
 
 const isPositiveInteger = n => isInteger(n) && parseFloat(n) > 0
 module.exports = {
+	containsString,
 	unauthorized,
 	notFound,
 	badRequest,
