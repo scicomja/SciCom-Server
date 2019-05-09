@@ -31,7 +31,7 @@ const sendResetPasswordEmail = async ({
 		to: toEmail,
 		subject: "Your password reset on sci-com.org",
 		html: `
-      <p> Click <a>here</a> to reset your password.
+			Your token is ${token}. Please input this token to the checkbox to reset your password.
     `
 	}
 	// let the error throws from here so the caller is going to catch it.

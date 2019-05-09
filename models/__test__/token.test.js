@@ -2,6 +2,10 @@ const mongoose = require("mongoose")
 const { TokenModel, tokenType } = require("../token")
 const { TEST_DATABASE_URL = "mongodb://localhost:27027/test" } = process.env
 
+// test data
+const mockEmail = "whatever"
+
+// use a real mongodb that got reset everytime.
 beforeAll(async () => {
 	mongoose.connect(TEST_DATABASE_URL)
 	await TokenModel.remove({})
@@ -17,7 +21,6 @@ afterEach(async () => {
 })
 
 it("should create an entry from `createResetPasswordEntry`", async () => {
-	const mockEmail = "whatever"
 	const token = await TokenModel.createResetPasswordEntry(mockEmail)
 
 	expect(typeof token).toBe("string")
@@ -37,8 +40,6 @@ it("should create an entry from `createResetPasswordEntry`", async () => {
 })
 
 it("should update the existing entry when `createResetPasswordEntry` is called more than once", async () => {
-	const mockEmail = "whatever"
-
 	const firstToken = await TokenModel.createResetPasswordEntry(mockEmail)
 	const secondToken = await TokenModel.createResetPasswordEntry(mockEmail)
 
@@ -59,6 +60,39 @@ it("should update the existing entry when `createResetPasswordEntry` is called m
 	expect(firstResult).toEqual(expect.objectContaining(expectedPayload))
 })
 
+describe("query token", () => {
+	it("should return false if payload is malformed", async () => {
+		const token = await TokenModel.createResetPasswordEntry(mockEmail)
+
+		const query = { email: mockEmail } // malformed email
+
+		const result = await TokenModel.queryToken(query)
+
+		expect(result).toBe(false)
+	})
+
+	it("should return true if token is found", async () => {
+		const token = await TokenModel.createResetPasswordEntry(mockEmail)
+
+		const query = { email: mockEmail, token, type: tokenType.RESET_PASSWORD }
+
+		const result = await TokenModel.queryToken(query)
+
+		expect(result).toBe(true)
+	})
+
+	it("should return false if token is not found", async () => {
+		const token = await TokenModel.createResetPasswordEntry(mockEmail)
+
+		const query = {
+			email: mockEmail + "something that doesn't exist in database"
+		}
+
+		const result = await TokenModel.queryToken(query)
+
+		expect(result).toBe(false)
+	})
+})
 describe("matching token", () => {
 	/**
     Steps for testing `matchToken` method in TokenModel:
@@ -68,26 +102,29 @@ describe("matching token", () => {
         = if token is removed.
         = if result is true
   */
-	it("should remove matching token", async () => {
-		const email = "whatever"
-		// 1.
-		const token = await TokenModel.createResetPasswordEntry(email)
 
-		const matchTokenPayload = { email, token, type: tokenType.RESET_PASSWORD }
+	it("should remove matching token", async () => {
+		// 1.
+		const token = await TokenModel.createResetPasswordEntry(mockEmail)
+
+		const matchTokenPayload = {
+			email: mockEmail,
+			token,
+			type: tokenType.RESET_PASSWORD
+		}
 		// 2.
 		const isMatch = await TokenModel.matchToken(matchTokenPayload)
 
-		const tokenObjects = await TokenModel.find({ email })
+		const tokenObjects = await TokenModel.find({ mockEmail })
 		// 3.
 		expect(tokenObjects.length).toBe(0)
 		expect(isMatch).toBe(true)
 	})
 
 	it("should not remove non-matching token", async () => {
-		const email = "whatever"
-		const token = await TokenModel.createResetPasswordEntry(email)
+		const token = await TokenModel.createResetPasswordEntry(mockEmail)
 		const matchTokenPayload = {
-			email,
+			email: mockEmail,
 			token: "wrong-token",
 			type: tokenType.RESET_PASSWORD
 		}

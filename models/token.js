@@ -14,6 +14,9 @@ const rawSchema = {
 	token: { type: String, required: true }
 }
 
+const validatePayload = payload => {
+	return !Object.keys(rawSchema).some(key => !payload.hasOwnProperty(key))
+}
 const schema = new mongoose.Schema(rawSchema)
 /**
 	Static methods for creating a reset password entry.
@@ -24,7 +27,7 @@ const schema = new mongoose.Schema(rawSchema)
 	@throws Error during the `findOneAndUpdate` call
 */
 
-schema.statics.createResetPasswordEntry = function(email, cb) {
+schema.statics.createResetPasswordEntry = function(email) {
 	const type = tokenType.RESET_PASSWORD
 	const token = cryptoSecureRandomString()
 	return new Promise((resolve, reject) => {
@@ -40,6 +43,13 @@ schema.statics.createResetPasswordEntry = function(email, cb) {
 		)
 	})
 }
+
+schema.statics.queryToken = async function(thing, cb) {
+	if (!validatePayload(thing)) return false
+
+	const hasResult = await this.findOne(thing)
+	return !!hasResult
+}
 /**
 	Given a token - email - tokenType pair, check if there are records matching this token.
 	If there is, remove it from database and return true.
@@ -47,9 +57,8 @@ schema.statics.createResetPasswordEntry = function(email, cb) {
 */
 schema.statics.matchToken = async function(thing, cb) {
 	// check if all the keys in rawSchema are given in the "thing"
-	if (Object.keys(rawSchema).some(key => !thing.hasOwnProperty(key))) {
-		return false
-	}
+	if (!validatePayload(thing)) return false
+
 	const matchingObject = await this.findOne(thing)
 	if (!matchingObject) return false
 
@@ -57,6 +66,7 @@ schema.statics.matchToken = async function(thing, cb) {
 	await matchingObject.remove()
 	return true
 }
+
 const TokenModel = mongoose.model("Token", schema)
 
 module.exports = {

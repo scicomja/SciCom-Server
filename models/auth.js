@@ -16,8 +16,8 @@ const { unauthorized, badRequest } = require("../utils")
 const EmailValidator = require("email-validator")
 const swot = require("swot-js")()
 
-const { sendResetPasswordEmail } = require("../mail")
-const { TokenModel } = require("./token")
+const { TokenModel, tokenType: TokenType } = require("./token")
+const Mail = require("../mail")
 
 // configure authentication strategy
 passport.use(
@@ -193,13 +193,45 @@ router.post(
 		})
 	}
 )
+/**
+	Given a email address, token sent in the email, and a the new password, update the record associated to the account.
+
+	@response: { updated: boolean }
+	@request: { email: String, token: String, password: String}
+
+*/
+router.post("/setPassword", async (req, res) => {
+	const { email, token, password: newPassword } = req.body
+	const foundRecord = await TokenModel.matchToken({
+		email,
+		type: TokenType.RESET_PASSWORD,
+		token
+	})
+	// return if the record is not found.
+	if (!foundRecord) {
+		return res.json({ updated: false })
+	}
+
+	// the token should be removed at this point, now change the password.
+
+	// user cannot be empty here
+	try {
+		const user = await UserModel.findOne({ email })
+		// actual update password here
+		user.password = newPassword
+		// use save to trigger the password hashing
+		await user.save()
+
+		return res.json({ updated: true })
+	} catch (err) {
+		return res.json({ updated: false })
+	}
+})
 
 /**
   Given a email address, create a token and store it to database, and return the token
-
 */
 router.post("/resetPassword", async (req, res) => {
-	console.log("reset password!")
 	const { email } = req.body
 	const foundUser = await UserModel.findOne({ email })
 	// if there is no such user with this email. do nothing
@@ -208,12 +240,15 @@ router.post("/resetPassword", async (req, res) => {
 	// the user is found.
 	const { username } = foundUser
 	try {
-		TokenModel.sendResetPasswordEmail({
+		// create a token and store it in database
+		const token = await TokenModel.createResetPasswordEntry(email)
+		// then wait for sending email.
+		await Mail.sendResetPasswordEmail({
 			account: { username, email },
 			token
 		})
-		return res.json({})
 	} catch (err) {
+	} finally {
 		return res.json({})
 	}
 })
