@@ -6,9 +6,16 @@ const Mail = require("../../mail")
 
 const { TokenModel } = require("../token")
 const { model: UserModel } = require("../user")
+const { TEST_DATABASE_URL = "mongodb://localhost:27027/test" } = process.env
 
 const { router, authenticateMiddleware } = require("../auth")
 
+const Endpoints = {
+	REGISTER: "/auth/register",
+	LOGIN: "/auth/login",
+	RESET_PASSWORD: "/auth/resetPassword",
+	SET_PASSWORD: "/auth/setPassword"
+}
 const initApp = () => {
 	const app = require("../../app")
 	return app
@@ -51,7 +58,7 @@ describe("reset email", () => {
 		findUserSpy.mockResolvedValueOnce(mockedUser)
 		// trigger the endpoint.
 		const response = await request(app)
-			.post("/auth/resetPassword")
+			.post(Endpoints.RESET_PASSWORD)
 			.send({ email: mockedUser.email })
 			.expect(200)
 		// examine the spies after receiving the response
@@ -70,7 +77,7 @@ describe("reset email", () => {
 		findUserSpy.mockResolvedValueOnce(null) // faking that there are not such user found.
 
 		const response = await request(app)
-			.post("/auth/resetPassword")
+			.post(Endpoints.RESET_PASSWORD)
 			.send({ email: "whatever" })
 			.expect(200)
 
@@ -101,7 +108,7 @@ describe("set password", async () => {
 
 	beforeAll(async () => {
 		jest.setTimeout(20 * 1000) // lets give 20 seconds to the test since it is a long one.
-		await mongoose.connect("mongodb://localhost:27027/test")
+		await mongoose.connect(TEST_DATABASE_URL)
 		// remove all relevant collections in case there is something left behind
 		await clearDatabase()
 	})
@@ -116,7 +123,7 @@ describe("set password", async () => {
 		app = initApp()
 		// actually insert records to database
 		await request(app)
-			.post("/auth/register")
+			.post(Endpoints.REGISTER)
 			.send(mockUser)
 	})
 
@@ -128,9 +135,8 @@ describe("set password", async () => {
 		/********************************
 			Phase 1: create a fake account.
 		********************************/
-		console.log("Phase 1")
 		const loginResponse = await request(app)
-			.post("/auth/login")
+			.post(Endpoints.LOGIN)
 			.send({ username: mockUser.username, password: mockUser.password })
 			.expect(200)
 
@@ -142,12 +148,11 @@ describe("set password", async () => {
 		/********************************
 			Phase 2: Trigger reset password request
 		********************************/
-		console.log("Phase 2")
 		// to prevent emails actually being sent, spy on the email sending method.
 		sendMailSpy.mockResolvedValueOnce({})
 		// then lets say he forgets about his password...
 		const resetResponse = await request(app)
-			.post("/auth/resetPassword")
+			.post(Endpoints.RESET_PASSWORD)
 			.send({ email: mockUser.email })
 			.expect(200)
 
@@ -157,11 +162,22 @@ describe("set password", async () => {
 		/********************************
 			Phase 3: Pretend to submit in the token as well as a new password
 		********************************/
-		console.log("Phase 3")
 		// then lets cheat a bit: find out the token directly from database.
-		const { token } = await TokenModel.findOne({ email: mockUser.email })
+		const resetPasswordTokenEntry = await TokenModel.findOne({
+			email: mockUser.email
+		})
 		// assert that the token entry is created
-		expect(token).toBeTruthy()
+		expect(resetPasswordTokenEntry).toBeTruthy()
+		// check if the token created conforms to the type
+		expect(resetPasswordTokenEntry).toEqual(
+			expect.objectContaining({
+				token: expect.any(String),
+				email: expect.any(String),
+				type: expect.any(String)
+			})
+		)
+		// retrieve the token from the entry afterwards
+		const token = resetPasswordTokenEntry.token
 
 		const newPassword = mockUser.password + "something new" // make sure that it really is different from the original password
 		const payload = {
@@ -171,7 +187,7 @@ describe("set password", async () => {
 		}
 
 		const setPasswordResponse = await request(app)
-			.post("/auth/setPassword")
+			.post(Endpoints.SET_PASSWORD)
 			.send(payload)
 			.expect(200)
 
@@ -181,9 +197,9 @@ describe("set password", async () => {
 		/********************************
 			Phase 4: Verify that the password has really been updated
 		********************************/
-		console.log("Phase 4")
+		// try logging in with the old password and it SHOULD FAIL (gives 401)
 		const anotherLoginResponse = await request(app)
-			.post("/auth/login")
+			.post(Endpoints.LOGIN)
 			.send({ username: mockUser.username, password: mockUser.password })
 			.expect(401) // unauthorized
 
@@ -191,17 +207,70 @@ describe("set password", async () => {
 		expect(anotherLoginResponse.body).toEqual(
 			expect.not.objectContaining({ token: expect.any(String) })
 		)
-
+		// verify that the new password SHOULD WORK (gives 200)
 		const finalLoginResponse = await request(app)
-			.post("/auth/login")
+			.post(Endpoints.LOGIN)
 			.send({ username: mockUser.username, password: newPassword })
 			.expect(200)
 
-		// and that the new password can indeed be used to login
+		// and that the token is returned
 		expect(finalLoginResponse.body).toEqual(
 			expect.objectContaining({
 				token: expect.any(String)
 			})
 		)
+	})
+
+	it("should not update the password if token is invalid", async () => {
+		// since the login has been checked by previous test, it is not checked here anymore.
+		/********************************
+			Phase 1: Trigger reset password request
+		********************************/
+		// to prevent emails actually being sent, spy on the email sending method.
+		sendMailSpy.mockResolvedValueOnce({})
+		// then lets say he forgets about his password...
+		const resetResponse = await request(app)
+			.post(Endpoints.RESET_PASSWORD)
+			.send({ email: mockUser.email })
+			.expect(200)
+
+		// nothing should be obtained.
+		expect(resetResponse.body).toEqual({})
+
+		/********************************
+			Phase 2: Use an invalid token to reset password
+		********************************/
+		const newPassword = mockUser.password + "new password"
+		const setPasswordResponse = await request(app)
+			.post(Endpoints.SET_PASSWORD)
+			.send({
+				email: mockUser.email,
+				password: newPassword,
+				token: "some_wrong_token"
+			})
+			.expect(200)
+
+		expect(setPasswordResponse.body).toEqual({
+			updated: false
+		})
+
+		/********************************
+			Phase 3: Verify the user password has not be changed.
+		********************************/
+		const loginResponse = await request(app)
+			.post(Endpoints.LOGIN)
+			.send({
+				username: mockUser.username,
+				password: mockUser.password
+			})
+			.expect(200) // login should be successful
+
+		const failedLoginResponse = await request(app)
+			.post(Endpoints.LOGIN)
+			.send({
+				username: mockUser.username,
+				password: newPassword
+			})
+			.expect(401) // this login should fail.
 	})
 })

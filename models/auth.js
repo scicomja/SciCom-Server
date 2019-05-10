@@ -90,7 +90,7 @@ router.post("/register", async (req, res) => {
 		})
 	}
 	// check if user exists
-	const existUsers = await UserModel.find({ username })
+	const existUsers = await UserModel.find().or([{ username }, { email }])
 	if (existUsers.length > 0) {
 		return res.status(400).json({
 			error: "user with the same username exists"
@@ -109,7 +109,9 @@ router.post("/register", async (req, res) => {
 		})
 	}
 
-	const token = signUser(username)
+	const verificationToken = await TokenModel.createEmailVerificationEntry(email)
+	await Mail.sendVerificationEmail({ email, verificationToken })
+	// send email
 
 	try {
 		const result = await UserModel.create({
@@ -118,8 +120,8 @@ router.post("/register", async (req, res) => {
 			password,
 			isPolitician
 		})
-		return res.status(201).json({
-			token
+		return res.status(200).json({
+			status: "ok" // DO NOT signin the user here.
 		})
 	} catch (err) {
 		return badRequest(res, err)
@@ -209,6 +211,7 @@ router.post("/setPassword", async (req, res) => {
 	})
 	// return if the record is not found.
 	if (!foundRecord) {
+		console.log("set password: record not found.")
 		return res.json({ updated: false })
 	}
 
@@ -224,6 +227,7 @@ router.post("/setPassword", async (req, res) => {
 
 		return res.json({ updated: true })
 	} catch (err) {
+		console.log("error at set password", err)
 		return res.json({ updated: false })
 	}
 })
@@ -253,6 +257,30 @@ router.post("/resetPassword", async (req, res) => {
 	}
 })
 
+router.post("/verifyEmail", async (req, res) => {
+	const { email, token } = req.body
+
+	const verified = await TokenModel.matchToken({
+		email,
+		token,
+		type: TokenType.EMAIL_VERIFICATION
+	})
+
+	if (!verified) {
+		return unauthorized(res, "verification failed")
+	} else {
+		const { username } = await UserModel.verifyUser(email)
+		if (!username) {
+			return badRequest(res) // what?
+		}
+
+		const token = signUser(username)
+		// now show the display message
+		return res.status(201).json({
+			token
+		})
+	}
+})
 module.exports = {
 	router,
 	authenticateMiddleware

@@ -29,27 +29,9 @@ const schema = new mongoose.Schema(rawSchema)
 
 schema.statics.createResetPasswordEntry = function(email) {
 	const type = tokenType.RESET_PASSWORD
-	const token = cryptoSecureRandomString()
-	return new Promise((resolve, reject) => {
-		this.findOneAndUpdate(
-			{ type, email }, // query
-			{ token }, // update
-			{ upsert: true }, // options
-			(err, thing) => {
-				// callback: things that is tweaked.
-				if (err) reject(err)
-				else resolve(token)
-			}
-		)
-	})
+	return this.createEntry(email, type)
 }
 
-schema.statics.queryToken = async function(thing, cb) {
-	if (!validatePayload(thing)) return false
-
-	const hasResult = await this.findOne(thing)
-	return !!hasResult
-}
 /**
 	Given a token - email - tokenType pair, check if there are records matching this token.
 	If there is, remove it from database and return true.
@@ -65,6 +47,27 @@ schema.statics.matchToken = async function(thing, cb) {
 	// object matches, remove entry and return true.
 	await matchingObject.remove()
 	return true
+}
+
+schema.statics.createEntry = function(email, type) {
+	const token = cryptoSecureRandomString()
+	return new Promise((resolve, reject) => {
+		this.findOneAndUpdate(
+			{ type, email }, // query
+			{ token }, // update
+			{ upsert: true }, // options, create a record if it doesn't exist
+			(err, thing) => {
+				// callback: things that is tweaked.
+				if (err) reject(err)
+				else resolve(token)
+			}
+		)
+	})
+}
+
+schema.statics.createEmailVerificationEntry = function(email) {
+	const type = tokenType.EMAIL_VERIFICATION
+	return this.createEntry(email, type)
 }
 
 const TokenModel = mongoose.model("Token", schema)

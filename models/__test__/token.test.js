@@ -59,40 +59,6 @@ it("should update the existing entry when `createResetPasswordEntry` is called m
 	}
 	expect(firstResult).toEqual(expect.objectContaining(expectedPayload))
 })
-
-describe("query token", () => {
-	it("should return false if payload is malformed", async () => {
-		const token = await TokenModel.createResetPasswordEntry(mockEmail)
-
-		const query = { email: mockEmail } // malformed email
-
-		const result = await TokenModel.queryToken(query)
-
-		expect(result).toBe(false)
-	})
-
-	it("should return true if token is found", async () => {
-		const token = await TokenModel.createResetPasswordEntry(mockEmail)
-
-		const query = { email: mockEmail, token, type: tokenType.RESET_PASSWORD }
-
-		const result = await TokenModel.queryToken(query)
-
-		expect(result).toBe(true)
-	})
-
-	it("should return false if token is not found", async () => {
-		const token = await TokenModel.createResetPasswordEntry(mockEmail)
-
-		const query = {
-			email: mockEmail + "something that doesn't exist in database"
-		}
-
-		const result = await TokenModel.queryToken(query)
-
-		expect(result).toBe(false)
-	})
-})
 describe("matching token", () => {
 	/**
     Steps for testing `matchToken` method in TokenModel:
@@ -185,5 +151,18 @@ describe("matching token", () => {
 				expect(numDocs).toBe(otherRecords.length)
 			})
 		)
+	})
+})
+
+describe("Create email verification token", async () => {
+	it("should create a email verification token", async () => {
+		const token = TokenModel.createEmailVerificationEntry(mockEmail)
+
+		const entry = TokenModel.findOne({
+			token,
+			email: mockEmail
+		})
+
+		expect(entry).toBeTruthy()
 	})
 })

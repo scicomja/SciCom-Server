@@ -43,6 +43,25 @@ const sendResetPasswordEmail = async ({
 	}
 }
 
+const sendVerificationEmail = async ({ email: toEmail, token }) => {
+	const options = {
+		from: from_email_address,
+		to: toEmail,
+		subject: "Verify your email address on sci-com.org",
+		html: `
+			Enter the token below to verify your email address:
+			<b>${token}</b>
+		`
+	}
+
+	try {
+		return await sendEmail(options)
+	} catch (err) {
+		return {}
+	}
+}
+
 module.exports = {
-	sendResetPasswordEmail
+	sendResetPasswordEmail,
+	sendVerificationEmail
 }

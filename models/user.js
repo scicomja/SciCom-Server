@@ -48,6 +48,9 @@ const rawSchema = {
 	email: { type: String, required: true },
 	password: { type: String, select: false, required: true },
 	isPolitician: { type: Boolean, required: true, default: false },
+
+	verified: { type: Boolean, required: true, default: false },
+
 	// verified: { type: Boolean, required: true, default: false },
 	firstName: String,
 	lastName: String,
@@ -162,6 +165,14 @@ UserSchema.pre("remove", async function(next) {
 
 	next()
 })
+
+UserSchema.statics.verifyUser = async function(email) {
+	return await this.findOneAndUpdate(
+		{ email },
+		{ verified: true },
+		{ new: true } // return the updated document.
+	)
+}
 
 const UserModel = mongoose.model("User", UserSchema)
 
