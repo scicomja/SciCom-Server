@@ -108,10 +108,11 @@ router.post("/register", async (req, res) => {
 			error: "Provided email is not a student account"
 		})
 	}
-
+	/**
+		Send a email verification, and user is required to input this through a popup
+	*/
 	const verificationToken = await TokenModel.createEmailVerificationEntry(email)
-	await Mail.sendVerificationEmail({ email, verificationToken })
-	// send email
+	await Mail.sendVerificationEmail({ email, token: verificationToken })
 
 	try {
 		const result = await UserModel.create({
@@ -256,6 +257,11 @@ router.post("/resetPassword", async (req, res) => {
 		return res.json({})
 	}
 })
+
+/**
+	Endpoint for the user to reply to the email verifcation challenge.
+
+*/
 
 router.post("/verifyEmail", async (req, res) => {
 	const { email, token } = req.body

@@ -57,6 +57,7 @@ const sendVerificationEmail = async ({ email: toEmail, token }) => {
 	try {
 		return await sendEmail(options)
 	} catch (err) {
+		console.log("error when sendin email", err)
 		return {}
 	}
 }

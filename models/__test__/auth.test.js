@@ -4,7 +4,7 @@ const sinon = require("sinon")
 
 const Mail = require("../../mail")
 
-const { TokenModel } = require("../token")
+const { TokenModel, tokenType: TokenType } = require("../token")
 const { model: UserModel } = require("../user")
 const { TEST_DATABASE_URL = "mongodb://localhost:27027/test" } = process.env
 
@@ -19,6 +19,17 @@ const Endpoints = {
 const initApp = () => {
 	const app = require("../../app")
 	return app
+}
+// set of convenient methods for requesting
+const Requests = {
+	RESET_PASSWORD: (app, email) =>
+		request(app)
+			.post(Endpoints.RESET_PASSWORD)
+			.send({ email }),
+	REGISTER: (app, { email, username, password }) =>
+		request(app)
+			.post(Endpoints.REGISTER)
+			.send({ email, username, password, isPolitician: true })
 }
 // spies used accross all test suites in this file
 
@@ -57,10 +68,10 @@ describe("reset email", () => {
 		createEntrySpy.mockResolvedValueOnce(mockToken)
 		findUserSpy.mockResolvedValueOnce(mockedUser)
 		// trigger the endpoint.
-		const response = await request(app)
-			.post(Endpoints.RESET_PASSWORD)
-			.send({ email: mockedUser.email })
-			.expect(200)
+		const response = await Requests.RESET_PASSWORD(
+			app,
+			mockedUser.email
+		).expect(200)
 		// examine the spies after receiving the response
 
 		// to result in all cases
@@ -76,10 +87,7 @@ describe("reset email", () => {
 	it("Should not send email when user is not found", async () => {
 		findUserSpy.mockResolvedValueOnce(null) // faking that there are not such user found.
 
-		const response = await request(app)
-			.post(Endpoints.RESET_PASSWORD)
-			.send({ email: "whatever" })
-			.expect(200)
+		const response = await Requests.RESET_PASSWORD(app, "whatever").expect(200)
 
 		// gives no hint to the user that thte user is not found.
 		expect(response.body).toEqual({})
@@ -122,9 +130,7 @@ describe("set password", async () => {
 	beforeEach(async () => {
 		app = initApp()
 		// actually insert records to database
-		await request(app)
-			.post(Endpoints.REGISTER)
-			.send(mockUser)
+		await Requests.REGISTER(app, mockUser)
 	})
 
 	afterEach(async () => {
@@ -272,5 +278,40 @@ describe("set password", async () => {
 				password: newPassword
 			})
 			.expect(401) // this login should fail.
+	})
+})
+
+describe("user email verification", async () => {
+	let sendEmailSpy
+
+	beforeAll(() => {
+		sendEmailSpy = jest
+			.spyOn(Mail, "sendVerificationEmail")
+			.mockResolvedValue({})
+	})
+
+	afterEach(() => {
+		sendEmailSpy.mockClear()
+	})
+
+	afterAll(() => {
+		sendEmailSpy.mockRestore()
+	})
+
+	it("should send email for email verification", async () => {
+		const mockEmail = "whatever@example.com"
+		// pretend that we register a user.
+		const registerResponse = await Requests.REGISTER(app, {
+			email: mockEmail,
+			username: "whatever",
+			password: "whatever"
+		})
+
+		const record = await TokenModel.find({
+			email: mockEmail,
+			type: TokenType.EMAIL_VERIFICATION
+		})
+		// make sure that the email is really been called
+		expect(sendEmailSpy).toHaveBeenCalled()
 	})
 })
