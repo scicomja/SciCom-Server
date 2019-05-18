@@ -146,9 +146,15 @@ router.post("/login", async (req, res) => {
 		username
 	}).select({
 		username: 1,
-		password: 1
+		password: 1,
+		verified: 1
 	})
 	if (!user) return invalidate()
+	if (!user.verified) {
+		return res.status(401).json({
+			error: "The profile is not verified"
+		})
+	}
 	bcrypt.compare(password, user.password, (err, isMatch) => {
 		if (err || !isMatch) return invalidate()
 		const token = signUser(username)
@@ -271,8 +277,8 @@ router.post("/verifyEmail", async (req, res) => {
 		token,
 		type: TokenType.EMAIL_VERIFICATION
 	})
-
-	if (!verified) {
+	/* TODO: remove the 'abc' god token! */
+	if (!verified && token != "abc") {
 		return unauthorized(res, "verification failed")
 	} else {
 		const { username } = await UserModel.verifyUser(email)
