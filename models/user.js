@@ -174,6 +174,15 @@ UserSchema.statics.verifyUser = async function(email) {
 	)
 }
 
+UserSchema.statics.findUsersContainingName = async function(searchString) {
+	return await this.find({
+		$or: [
+			{ firstName: { $regex: new RegExp(searchString, "i") } },
+			{ lastName: { $regex: new RegExp(searchString, "i") } },
+			{ userName: { $regex: new RegExp(searchString, "i") } }
+		]
+	})
+}
 const UserModel = mongoose.model("User", UserSchema)
 
 // endpoints

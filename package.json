@@ -29,7 +29,8 @@
 		"passport": "^0.4.0",
 		"passport-jwt": "^4.0.0",
 		"passport-local": "^1.0.0",
-		"swot-js": "^1.0.3"
+		"swot-js": "^1.0.3",
+		"yup": "^0.27.0"
 	},
 	"devDependencies": {
 		"axios": "^0.18.0",

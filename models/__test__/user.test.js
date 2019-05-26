@@ -58,7 +58,7 @@ describe("User registration", async () => {
 
 		expect(sendEmailSpy).toHaveBeenCalledWith({
 			email: mockUser.email,
-			verificationToken: token
+			token
 		})
 	})
 
