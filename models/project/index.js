@@ -1,4 +1,3 @@
-const mongoose = require("mongoose")
 const lockdown = require("mongoose-lockdown")
 const express = require("express")
 const ObjectId = require("mongoose").Types.ObjectId
@@ -6,140 +5,25 @@ const ObjectId = require("mongoose").Types.ObjectId
 const multer = require("multer")
 const fs = require("fs")
 const path = require("path")
-
+const { projectDir } = require("../../constants")
 // const { ApplicationModel } = require('./application')
 
-const { validateParameters, constructQuery } = require("./validator/project")
+const { validateParameters, constructQuery } = require("../validator/project")
+
 const {
-	germanStates,
-	projectStatus,
-	projectType,
-	projectDir
-} = require("../constants")
-const { badRequest, unauthorized, notFound, generateID } = require("../utils")
+	badRequest,
+	unauthorized,
+	notFound,
+	generateID
+} = require("../../utils")
 
 const _ = require("lodash")
 
-const { model: UserModel } = require("./user")
+const { model: UserModel } = require("../user")
+const { rawSchema, model: ProjectModel } = require("./schema")
 
 const router = express.Router()
 
-const rawSchema = {
-	title: { type: String, required: true },
-	description: String,
-	status: {
-		type: String,
-		required: true,
-		default: projectStatus[0],
-		enum: projectStatus
-	},
-	file: String,
-	creator: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "User",
-		required: true,
-		lockdown: true,
-		autopopulate: true
-	},
-	from: {
-		type: Date,
-		required: true,
-		default: new Date()
-		// make sure if there's "to", it is before that
-		// validate: v => !v.to || new Date(v.from) < new Date(v.to)
-	},
-	to: {
-		type: Date
-	},
-	nature: {
-		type: String,
-		required: true,
-		default: projectType[0],
-		enum: projectType
-	},
-	state: {
-		type: String,
-		default: germanStates[0],
-		enum: germanStates
-	},
-
-	tags: [String],
-	salary: {
-		type: Number,
-		default: 0,
-		validate: v => v >= 0
-	},
-	questions: [String]
-}
-const fileFields = ["file"]
-const ProjectSchema = new mongoose.Schema(rawSchema, {
-	timestamps: true
-})
-	.plugin(lockdown)
-	.plugin(require("mongoose-autopopulate"))
-
-ProjectSchema.pre("validate", function(next) {
-	// if (this.from < new Date()) {
-	// 	return next(new Error("Start date must not be from the past"))
-	// }
-	if (this.to && this.from >= this.to) {
-		return next(new Error("To date must be later than from date"))
-	}
-	next()
-})
-
-// before removing a project, delete all the applications and bookmarks to it.
-ProjectSchema.pre("remove", async function(next) {
-	const { _id } = this
-	const { model: ApplicationModel } = require("./application")
-	const { model: UserModel } = require("./user")
-	// remove all applications to this project
-	const appResult = await ApplicationModel.deleteMany({
-		project: _id
-	})
-	// remove all bookmarks from students' bookmarks
-	const bookmarkResult = await UserModel.updateMany(
-		{
-			isPolitician: false
-		},
-		{
-			$pullAll: {
-				bookmarks: [_id]
-			}
-		}
-	)
-	next()
-})
-
-ProjectSchema.statics.queryProject = async function({
-	searchTerm,
-	salary,
-	date
-}) {
-	let query = {}
-	if (!searchTerm && !salary && !date) return [] // do not return everything if the query is empty
-	if (searchTerm) {
-		const regexConstraint = { $regex: new RegExp(searchTerm, "i") }
-		query.$or = [
-			{ title: regexConstraint },
-			{ description: regexConstraint },
-			{ nature: regexConstraint },
-			{ state: regexConstraint },
-			{ type: regexConstraint },
-			{ tags: regexConstraint }
-		]
-	}
-
-	if (salary) {
-		query.salary = { $gte: salary }
-	}
-
-	if (date) {
-		query.date = { $gte: date }
-	}
-	return await this.find(query)
-}
-const ProjectModel = mongoose.model("Project", ProjectSchema)
 // endpoints
 
 router.get("/:id", async (req, res) => {
@@ -147,7 +31,6 @@ router.get("/:id", async (req, res) => {
 	const { _id: userId } = req.user
 	const project = await ProjectModel.findOne({ _id: id })
 	if (!project) return notFound(res)
-	console.log("get project", project)
 	if (userId.equals(project.creator._id)) {
 		const { model: ApplicationModel } = require("./application")
 		// This is the creator of the project
@@ -397,61 +280,45 @@ router.post("/apply/:id", async (req, res) => {
 		return badRequest(res, e)
 	}
 })
-router.post("/open/:id", async (req, res) => {
+/**
+  Common block for changing application status
+*/
+const setProjectStatus = async (status, req, res) => {
 	const { id } = req.params
-	const project = await ProjectModel.findOne({
-		_id: id
+	const user = req.user
+	const { error, project } = await ProjectModel.setProjectStatus({
+		user,
+		id,
+		status
 	})
-	if (!project) return notFound(res)
-	if (!project.creator._id.equals(req.user._id))
-		return unauthorized(res, "Only creator of the project can open / close it")
 
-	project.set("status", "open")
-	await project.save()
-	return res.status(200).json({ status: "open", ...project })
+	switch (error) {
+		case "Missing data":
+			return badRequest(res, error)
+		case "Unrecognised project status":
+			return badRequest(res, error)
+		case "Only creator of the project can open / close it":
+			return unauthorized(res, error)
+		case "Project cannot be completed if it is not closed":
+			return badRequest(res, error)
+		default:
+			return res.status(200).json({ status, ...project })
+	}
+}
+
+router.post("/open/:id", async (req, res) => {
+	return await setProjectStatus("open", req, res)
 })
 
 router.post("/close/:id", async (req, res) => {
-	const { id } = req.params
-	const project = await ProjectModel.findOne({
-		_id: id
-	})
-	if (!project) return notFound(res)
-	if (!project.creator._id.equals(req.user._id))
-		return unauthorized(res, "Only creator of the project can open / close it")
-
-	const result = await ProjectModel.findOneAndUpdate(
-		{
-			_id: id
-		},
-		{ status: "closed" }
-	)
-	return res.status(200).json({ status: "closed", ...result._doc })
+	return await setProjectStatus("closed", req, res)
 })
 
 // endpoint for marking a project as "completed"
 router.post("/complete/:id", async (req, res) => {
-	const { id } = req.params
-	const project = await ProjectModel.findOne({
-		_id: id
-	})
-	if (!project) return notFound(res)
-	if (!project.creator._id.equals(req.user._id))
-		return unauthorized(res, "Only creator of the project can open / close it")
-
-	if (project.status !== "closed") {
-		return badRequest(res, "Project cannot be completed if it is not closed")
-	}
-
-	const result = await ProjectModel.findOneAndUpdate(
-		{
-			_id: id
-		},
-		{ status: "completed" }
-	)
-
-	return res.status(200).json(result._doc)
+	return await setProjectStatus("completed", req, res)
 })
+
 router.post("/bookmark/:id", async (req, res) => {
 	if (req.user.isPolitician) {
 		return unauthorized(res, "only students can bookmark projects")
