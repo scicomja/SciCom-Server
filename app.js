@@ -10,6 +10,8 @@ const { router: projectRouter } = require("./models/project")
 
 const { router: applicationRouter } = require("./models/application")
 
+const { router: searchRouter } = require("./models/search")
+
 const { notFound } = require("./utils")
 const path = require("path")
 const cors = require("cors")
@@ -40,6 +42,7 @@ app.use("/constants", (req, res) => {
 	return res.status(200).json(results)
 })
 app.use("/auth", authRouter)
+app.use("/search", authenticateMiddleware, searchRouter)
 app.use("/user", authenticateMiddleware, userRouter)
 app.use("/project", authenticateMiddleware, projectRouter)
 app.use("/application", authenticateMiddleware, applicationRouter)

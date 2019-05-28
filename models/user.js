@@ -175,13 +175,14 @@ UserSchema.statics.verifyUser = async function(email) {
 }
 
 UserSchema.statics.findUsersContainingName = async function(searchString) {
+	console.log("search String", searchString)
 	return await this.find({
 		$or: [
 			{ firstName: { $regex: new RegExp(searchString, "i") } },
 			{ lastName: { $regex: new RegExp(searchString, "i") } },
-			{ userName: { $regex: new RegExp(searchString, "i") } }
+			{ username: { $regex: new RegExp(searchString, "i") } }
 		]
-	})
+	}).select("+firstName +lastName +username -bookmarks")
 }
 const UserModel = mongoose.model("User", UserSchema)
 

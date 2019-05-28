@@ -1,6 +1,6 @@
 // endpoints dedicated to the new searching algorithm.
-const { UserModel } = require("./user")
-const { ProjectModel } = require("./project")
+const { model: UserModel } = require("./user")
+const { model: ProjectModel } = require("./project")
 const { ApplicationModel } = require("./application")
 const { unauthorized, badRequest } = require("../utils")
 
@@ -12,20 +12,19 @@ const validatePayload = async payload => {
 	try {
 		await Yup.object()
 			.shape({
-				searchTerm: Yup.string().required(),
-				salary: Yup.number()
-					.positive()
-					.required(),
-				date: Yup.date().required()
+				searchTerm: Yup.string(),
+				salary: Yup.number().positive(),
+				date: Yup.date()
 			})
 			.validate(payload)
 		return true
 	} catch (err) {
+		console.log("validate error", err)
 		return false
 	}
 }
 
-router.get("/", async (req, res) => {
+router.post("/", async (req, res) => {
 	// first check the payload
 	const payload = req.body
 	const user = req.user
@@ -36,7 +35,6 @@ router.get("/", async (req, res) => {
 
 	// parse and query
 	const { searchTerm, salary, date } = payload
-
 	let result = {}
 	// searchTerm only, users included
 	if (!salary && !date) {
@@ -44,4 +42,8 @@ router.get("/", async (req, res) => {
 		result.users = userResults
 	}
 	// search projects in all other cases.
+	result.projects = await ProjectModel.queryProject(payload)
+	return res.json(result)
 })
+
+module.exports = { router }
