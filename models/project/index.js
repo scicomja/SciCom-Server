@@ -6,7 +6,6 @@ const multer = require("multer")
 const fs = require("fs")
 const path = require("path")
 const { projectDir } = require("../../constants")
-// const { ApplicationModel } = require('./application')
 
 const { validateParameters, constructQuery } = require("../validator/project")
 
@@ -32,7 +31,7 @@ router.get("/:id", async (req, res) => {
 	const project = await ProjectModel.findOne({ _id: id })
 	if (!project) return notFound(res)
 	if (userId.equals(project.creator._id)) {
-		const { model: ApplicationModel } = require("./application")
+		const { model: ApplicationModel } = require("../application")
 		// This is the creator of the project
 		// populate application schema here
 		const applicationsReceived = await ApplicationModel.find({
@@ -192,7 +191,7 @@ router.get("/", async (req, res) => {
 			return res.status(200).json(createdProjects)
 		} else {
 			// give list of projects applied by him.
-			const { model: ApplicationModel } = require("./application")
+			const { model: ApplicationModel } = require("../application")
 			const appliedProjects = await ApplicationModel.find({ applicant: id })
 				.populate("project")
 				.select("project")
@@ -225,7 +224,7 @@ router.get("/", async (req, res) => {
 // id is refering to a project
 router.post("/apply/:id", async (req, res) => {
 	// now the application model is needed
-	const { model: ApplicationModel } = require("./application")
+	const { model: ApplicationModel } = require("../application")
 
 	// only students can apply
 	if (req.user.isPolitician) {
