@@ -3,7 +3,9 @@ const { model: UserModel } = require("./user")
 const { model: ProjectModel } = require("./project")
 const { ApplicationModel } = require("./application")
 const { unauthorized, badRequest } = require("../utils")
+const { projectType } = require('../constants')
 
+const _ = require('lodash')
 const express = require("express")
 const Yup = require("yup")
 const router = express.Router()
@@ -16,9 +18,10 @@ const validatePayload = async payload => {
 				salary: Yup.string().oneOf([
 					"REQUIRED",
 					"NOT_REQUIRED",
-					"DOES_NOT_MATTER"
-				]),
-				// salary: Yup.number().positive(),
+					"DOES_NOT_MATTER",
+					null
+				]).nullable(),
+				type: Yup.string().oneOf(projectType),
 				date: Yup.date()
 			})
 			.validate(payload)
@@ -39,13 +42,14 @@ router.post("/", async (req, res) => {
 	}
 
 	// parse and query
-	const { searchTerm, salary, date } = payload
-	if (!searchTerm && !salary && !date) {
-		return badRequest(res, "At least one field has to be given")
+	const { searchTerm, salary, date, type } = payload
+	if (!searchTerm && !salary && !date && !type) {
+		return badRequest(res, {error: "At least one field has to be given"})
 	}
+
 	let result = {}
 	// searchTerm only, users included
-	if (!salary && !date) {
+	if (!salary && !date && !type) {
 		const userResults = await UserModel.findUsersContainingName(searchTerm)
 		result.users = userResults
 	}
