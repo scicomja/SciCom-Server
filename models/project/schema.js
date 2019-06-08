@@ -108,6 +108,7 @@ ProjectSchema.statics.queryProject = async function({
 		]
 	}
 
+	// filter according to whether the salary is given or not
 	if (salary == "REQUIRED") {
 		query.salary = { $gt: 0 } // this field indicates whether the salary is included or not
 	} else if (salary == "NOT_REQUIRED") {
@@ -115,7 +116,7 @@ ProjectSchema.statics.queryProject = async function({
 	}
 
 	if (date) {
-		query.date = { $gte: date }
+		query.from = { $gte: new Date(date) }
 	}
 	return await this.find(query)
 }
