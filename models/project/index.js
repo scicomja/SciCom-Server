@@ -329,7 +329,7 @@ router.post("/bookmark/:id", async (req, res) => {
 	})
 	if (!project) return notFound(res)
 	// check if there we have the bookmark
-	const { model: UserModel } = require("./user")
+	const { model: UserModel } = require("../user")
 	const { username } = req.user
 	const result = await UserModel.findOne({
 		username,

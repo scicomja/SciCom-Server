@@ -13,7 +13,12 @@ const validatePayload = async payload => {
 		await Yup.object()
 			.shape({
 				searchTerm: Yup.string(),
-				salary: Yup.number().positive(),
+				salary: Yup.string().oneOf([
+					"REQUIRED",
+					"NOT_REQUIRED",
+					"DOES_NOT_MATTER"
+				]),
+				// salary: Yup.number().positive(),
 				date: Yup.date()
 			})
 			.validate(payload)
@@ -35,6 +40,9 @@ router.post("/", async (req, res) => {
 
 	// parse and query
 	const { searchTerm, salary, date } = payload
+	if (!searchTerm && !salary && !date) {
+		return badRequest(res, "At least one field has to be given")
+	}
 	let result = {}
 	// searchTerm only, users included
 	if (!salary && !date) {

@@ -51,13 +51,13 @@ const rawSchema = {
 
 	verified: { type: Boolean, required: true, default: false },
 
-	// verified: { type: Boolean, required: true, default: false },
 	firstName: String,
 	lastName: String,
 
 	avatar: String,
 	// contacts
 	phone: String,
+
 	website: String,
 	linkedIn: String,
 	// locations
