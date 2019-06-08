@@ -92,10 +92,12 @@ ProjectSchema.pre("remove", async function(next) {
 ProjectSchema.statics.queryProject = async function({
 	searchTerm,
 	salary,
+	type,
 	date
 }) {
 	let query = {}
-	if (!searchTerm && !salary && !date) return [] // do not return everything if the query is empty
+	if (!searchTerm && !salary && !date && !type) return [] // do not return everything if the query is empty
+
 	if (searchTerm) {
 		const regexConstraint = { $regex: new RegExp(searchTerm, "i") }
 		query.$or = [
@@ -106,6 +108,10 @@ ProjectSchema.statics.queryProject = async function({
 			{ type: regexConstraint },
 			{ tags: regexConstraint }
 		]
+	}
+
+	if(type) {
+		query.nature = type
 	}
 
 	// filter according to whether the salary is given or not
