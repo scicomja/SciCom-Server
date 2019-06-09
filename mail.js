@@ -26,6 +26,7 @@ const sendResetPasswordEmail = async ({
 	account: { email: toEmail, username },
 	token
 }) => {
+	console.log('sending reset password email ')
 	const options = {
 		from: from_email_address,
 		to: toEmail,
@@ -39,6 +40,7 @@ const sendResetPasswordEmail = async ({
 		return await sendEmail(options)
 	} catch (err) {
 		// transporter is not created.
+		console.log('set reset error', err)
 		return {}
 	}
 }

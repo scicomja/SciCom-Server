@@ -244,10 +244,12 @@ router.post("/setPassword", async (req, res) => {
 */
 router.post("/resetPassword", async (req, res) => {
 	const { email } = req.body
+	console.log('email', email)
 	const foundUser = await UserModel.findOne({ email })
 	// if there is no such user with this email. do nothing
 	// because otherwise people can use this to spoof which email address is registered.
 	if (!foundUser) return res.json({})
+	console.log('find user')
 	// the user is found.
 	const { username } = foundUser
 	try {
