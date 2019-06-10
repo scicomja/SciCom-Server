@@ -1,5 +1,7 @@
 // file that summarises all email functionalities needed.
 const nodemailer = require("nodemailer")
+const { projectStatus, applicationStatus } = require('./constants')
+
 const {
 	email_user,
 	email_password,
@@ -26,21 +28,18 @@ const sendResetPasswordEmail = async ({
 	account: { email: toEmail, username },
 	token
 }) => {
-	console.log('sending reset password email ')
 	const options = {
 		from: from_email_address,
 		to: toEmail,
 		subject: "Your password reset on sci-com.org",
 		html: `
-			Your token is ${token}. Please input this token to the checkbox to reset your password.
+			The username of your account is <b>${username}</b> and your verification code is <b>${token}</b>. Please input this token to the checkbox to reset your password.
     `
 	}
 	// let the error throws from here so the caller is going to catch it.
 	try {
 		return await sendEmail(options)
 	} catch (err) {
-		// transporter is not created.
-		console.log('set reset error', err)
 		return {}
 	}
 }
@@ -59,12 +58,38 @@ const sendVerificationEmail = async ({ email: toEmail, token }) => {
 	try {
 		return await sendEmail(options)
 	} catch (err) {
-		console.log("error when sendin email", err)
+		return {}
+	}
+}
+
+const reportApplicationStatus = async ({
+	account: {email: toEmail },
+	project: { _id, title },
+	status
+}) => {
+	if(status != "accepted" && status != "rejected") {
+		return
+	}
+
+
+	const options = {
+		from: from_email_address,
+		to: toEmail,
+		subject: `Your application on sci-com.org is ${status}`,
+		html: `
+			This email is to notify you that your application to the project <b>${title}</b> is being ${status}.
+		`
+	}
+
+	try {
+		return await sendEmail(options)
+	} catch(err) {
 		return {}
 	}
 }
 
 module.exports = {
 	sendResetPasswordEmail,
-	sendVerificationEmail
+	sendVerificationEmail,
+	reportApplicationStatus
 }

@@ -6,6 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId
 
 const { badRequest, unauthorized, notFound } = require("../utils")
 const { applicationStatus } = require("../constants")
+const { reportApplicationStatus } = require('../mail')
 const { model: UserModel } = require("./user")
 const { model: ProjectModel } = require("./project")
 const router = express.Router()
@@ -47,7 +48,7 @@ const ApplicationSchema = new mongoose.Schema(rawSchema, {
 
 const ApplicationModel = mongoose.model("Application", ApplicationSchema)
 
-const changeApplicationStatus = status => async (req, res) => {
+const changeApplicationStatus = async (status, req, res) => {
 	if (!req.user.isPolitician) {
 		return unauthorized(res, "only politicians can accept applications")
 	}
@@ -64,6 +65,11 @@ const changeApplicationStatus = status => async (req, res) => {
 
 	application.set("status", status)
 	await application.save()
+	await reportApplicationStatus({
+		account: application.applicant,
+		project: application.project,
+		status
+	})
 	return res.status(200).json(application)
 }
 
@@ -88,11 +94,11 @@ router.get("/:id", async (req, res) => {
 })
 
 router.post("/:id/accept", async (req, res) => {
-	return await changeApplicationStatus("accepted")
+	return await changeApplicationStatus("accepted", req, res)
 })
 
 router.post("/:id/reject", async (req, res) => {
-	return await changeApplicationStatus("rejected")
+	return await changeApplicationStatus("rejected", req, res)
 })
 
 // get related applications of the user
