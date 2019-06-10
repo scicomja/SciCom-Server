@@ -69,8 +69,12 @@ ProjectSchema.pre("validate", function(next) {
 // before removing a project, delete all the applications and bookmarks to it.
 ProjectSchema.pre("remove", async function(next) {
 	const { _id } = this
-	const { model: ApplicationModel } = require("./application")
-	const { model: UserModel } = require("./user")
+	const { model: ApplicationModel } = require("../application")
+	const { model: UserModel } = require("../user")
+	const { reportProjectStatus } = require('../../mail')
+	const ObjectId = require("mongoose").Types.ObjectId
+	// notify uers for delecting
+	const applications = await ApplicationModel.find({ project: ObjectId(_id) })
 	// remove all applications to this project
 	const appResult = await ApplicationModel.deleteMany({
 		project: _id
@@ -85,6 +89,10 @@ ProjectSchema.pre("remove", async function(next) {
 				bookmarks: [_id]
 			}
 		}
+	)
+
+	await Promise.all(
+		applications.map(({ applicant }) => reportProjectStatus({ account: applicant, project: this, status: "deleted"}))
 	)
 	next()
 })

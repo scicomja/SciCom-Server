@@ -7,6 +7,8 @@ const fs = require("fs")
 const path = require("path")
 const { projectDir } = require("../../constants")
 
+const { reportProjectStatus } = require('../../mail')
+
 const { validateParameters, constructQuery } = require("../validator/project")
 
 const {
@@ -301,6 +303,11 @@ const setProjectStatus = async (status, req, res) => {
 		case "Project cannot be completed if it is not closed":
 			return badRequest(res, error)
 		default:
+			const { model: ApplicationModel } = require("../application")
+			const applications = await ApplicationModel.find({ project: ObjectId(id) })
+			await Promise.all(
+				applications.map(({ applicant }) => reportProjectStatus({ account: applicant, project, status}))
+			)
 			return res.status(200).json({ status, ...project })
 	}
 }

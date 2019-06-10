@@ -88,8 +88,31 @@ const reportApplicationStatus = async ({
 	}
 }
 
+const reportProjectStatus = async ({
+	account: { email: toEmail },
+	project: { title },
+	status
+}) => {
+	// if(projectStatus.indexOf(status) < 0) return
+
+	const options = {
+		from: from_email_address,
+		to: toEmail,
+		subject: `The project you have applied for on sci-com.org is ${status}`,
+		html: `
+			This email is to notify you that one of the projects you have applied for, <b>${title}</b>, is now ${status}.
+		`
+	}
+	try {
+		return await sendEmail(options)
+	} catch(err) {
+		return {}
+	}
+}
+
 module.exports = {
 	sendResetPasswordEmail,
 	sendVerificationEmail,
-	reportApplicationStatus
+	reportApplicationStatus,
+	reportProjectStatus
 }

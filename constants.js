@@ -21,7 +21,8 @@ const projectStatus = [
   "open",
   "active",
   "completed",
-  "closed"
+  "closed",
+  "deleted"
 ]
 
 const projectType = [
