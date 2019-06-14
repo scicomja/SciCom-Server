@@ -246,12 +246,14 @@ router.post("/", async (req, res) => {
 	const { isPolitician, username } = req.user
 
 	// parsing params
-	let updatableFields = "firstName,lastName,phone,website,linkedIn,city,state,title".split(
+	let updatableFields = "firstName,lastName,phone,website,linkedIn,city,state,title,PLZ".split(
 		","
 	)
 	// additional fields according to the user's role
 	if (isPolitician) {
-		updatableFields = updatableFields.concat(["position"])
+		updatableFields = updatableFields.concat(
+			"position,workingPhone,party,duty,position".split(",")
+		)
 	} else {
 		updatableFields = updatableFields.concat("major,university".split(","))
 	}
