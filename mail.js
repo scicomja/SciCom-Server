@@ -1,6 +1,6 @@
 // file that summarises all email functionalities needed.
 const nodemailer = require("nodemailer")
-const { projectStatus, applicationStatus } = require('./constants')
+const { projectStatus, applicationStatus } = require("./constants")
 
 const {
 	email_user,
@@ -63,14 +63,13 @@ const sendVerificationEmail = async ({ email: toEmail, token }) => {
 }
 
 const reportApplicationStatus = async ({
-	account: {email: toEmail },
+	account: { email: toEmail },
 	project: { _id, title },
 	status
 }) => {
-	if(status != "accepted" && status != "rejected") {
+	if (status != "accepted" && status != "rejected") {
 		return
 	}
-
 
 	const options = {
 		from: from_email_address,
@@ -83,7 +82,8 @@ const reportApplicationStatus = async ({
 
 	try {
 		return await sendEmail(options)
-	} catch(err) {
+	} catch (err) {
+		console.log("err", err)
 		return {}
 	}
 }
@@ -105,7 +105,8 @@ const reportProjectStatus = async ({
 	}
 	try {
 		return await sendEmail(options)
-	} catch(err) {
+	} catch (err) {
+		console.log("err", err)
 		return {}
 	}
 }

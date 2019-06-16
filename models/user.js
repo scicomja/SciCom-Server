@@ -255,7 +255,9 @@ router.post("/", async (req, res) => {
 			"position,workingPhone,party,duty,position".split(",")
 		)
 	} else {
-		updatableFields = updatableFields.concat("major,university".split(","))
+		updatableFields = updatableFields.concat(
+			"major,university,semester".split(",")
+		)
 	}
 	// for each file, we append a field
 	upload(req, res, async err => {
