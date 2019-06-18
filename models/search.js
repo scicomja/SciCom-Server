@@ -3,9 +3,9 @@ const { model: UserModel } = require("./user")
 const { model: ProjectModel } = require("./project")
 const { ApplicationModel } = require("./application")
 const { unauthorized, badRequest } = require("../utils")
-const { projectType } = require('../constants')
+const { projectType } = require("../constants")
 
-const _ = require('lodash')
+const _ = require("lodash")
 const express = require("express")
 const Yup = require("yup")
 const router = express.Router()
@@ -15,12 +15,9 @@ const validatePayload = async payload => {
 		await Yup.object()
 			.shape({
 				searchTerm: Yup.string(),
-				salary: Yup.string().oneOf([
-					"REQUIRED",
-					"NOT_REQUIRED",
-					"DOES_NOT_MATTER",
-					null
-				]).nullable(),
+				salary: Yup.string()
+					.oneOf(["REQUIRED", "NOT_REQUIRED", "DOES_NOT_MATTER", null])
+					.nullable(),
 				type: Yup.string().oneOf(projectType),
 				date: Yup.date()
 			})
@@ -44,13 +41,16 @@ router.post("/", async (req, res) => {
 	// parse and query
 	const { searchTerm, salary, date, type } = payload
 	if (!searchTerm && !salary && !date && !type) {
-		return badRequest(res, {error: "At least one field has to be given"})
+		return badRequest(res, { error: "At least one field has to be given" })
 	}
 
 	let result = {}
 	// searchTerm only, users included
 	if (!salary && !date && !type) {
-		const userResults = await UserModel.findUsersContainingName(searchTerm)
+		const userResults = await UserModel.findUsersContainingName(
+			searchTerm,
+			user.isPolitician
+		)
 		result.users = userResults
 	}
 	// search projects in all other cases.

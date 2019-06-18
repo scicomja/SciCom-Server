@@ -57,6 +57,7 @@ const rawSchema = {
 	avatar: String,
 	// contacts
 	phone: String,
+	PLZ: String,
 
 	website: String,
 	linkedIn: String,
@@ -174,15 +175,23 @@ UserSchema.statics.verifyUser = async function(email) {
 	)
 }
 
-UserSchema.statics.findUsersContainingName = async function(searchString) {
-	console.log("search String", searchString)
-	return await this.find({
+UserSchema.statics.findUsersContainingName = async function(
+	searchString,
+	isPolitician
+) {
+	let query = {
 		$or: [
 			{ firstName: { $regex: new RegExp(searchString, "i") } },
 			{ lastName: { $regex: new RegExp(searchString, "i") } },
 			{ username: { $regex: new RegExp(searchString, "i") } }
 		]
-	}).select("+firstName +lastName +username -bookmarks")
+	}
+	if (!isPolitician) {
+		query.isPolitician = true // if the user is not a politician, contains only results of politicians
+	}
+	return await this.find(query).select(
+		"+firstName +lastName +username -bookmarks"
+	)
 }
 const UserModel = mongoose.model("User", UserSchema)
 

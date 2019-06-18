@@ -57,11 +57,14 @@ const ProjectSchema = new mongoose.Schema(rawSchema, {
 	.plugin(require("mongoose-autopopulate"))
 
 ProjectSchema.pre("validate", function(next) {
-	// if (this.from < new Date()) {
-	// 	return next(new Error("Start date must not be from the past"))
-	// }
 	if (this.to && this.from >= this.to) {
 		return next(new Error("To date must be later than from date"))
+	}
+
+	if (!this.file && !this.description) {
+		return next(
+			new Error("At least one of the description or file must be provided")
+		)
 	}
 	next()
 })
@@ -71,7 +74,7 @@ ProjectSchema.pre("remove", async function(next) {
 	const { _id } = this
 	const { model: ApplicationModel } = require("../application")
 	const { model: UserModel } = require("../user")
-	const { reportProjectStatus } = require('../../mail')
+	const { reportProjectStatus } = require("../../mail")
 	const ObjectId = require("mongoose").Types.ObjectId
 	// notify uers for delecting
 	const applications = await ApplicationModel.find({ project: ObjectId(_id) })
@@ -92,7 +95,13 @@ ProjectSchema.pre("remove", async function(next) {
 	)
 
 	await Promise.all(
-		applications.map(({ applicant }) => reportProjectStatus({ account: applicant, project: this, status: "deleted"}))
+		applications.map(({ applicant }) =>
+			reportProjectStatus({
+				account: applicant,
+				project: this,
+				status: "deleted"
+			})
+		)
 	)
 	next()
 })
@@ -118,7 +127,7 @@ ProjectSchema.statics.queryProject = async function({
 		]
 	}
 
-	if(type) {
+	if (type) {
 		query.nature = type
 	}
 
