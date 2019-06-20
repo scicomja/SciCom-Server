@@ -87,6 +87,9 @@ const rawSchema = {
 			validator: v => !this.isPolitician
 		}
 	},
+
+	party: String,
+	duty: String,
 	position: {
 		type: String,
 		validate: {
