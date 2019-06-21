@@ -51,7 +51,6 @@ router.post("/", async (req, res) => {
 			searchTerm,
 			user.isPolitician
 		)
-		console.log("got results from db", userResults)
 		result.users = userResults
 	}
 	// search projects in all other cases.

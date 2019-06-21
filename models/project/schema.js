@@ -47,6 +47,17 @@ const rawSchema = {
 		default: 0,
 		validate: v => v >= 0
 	},
+
+	workingHours: {
+		type: Number,
+		default: 0,
+		validate: v => v >= 0
+	},
+
+	location: String,
+	partyMembership: String,
+	qualification: String,
+
 	questions: [String]
 }
 const fileFields = ["file"]
