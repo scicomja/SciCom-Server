@@ -114,34 +114,61 @@ ProjectSchema.statics.queryProject = async function({
 }) {
 	let query = {}
 	if (!searchTerm && !salary && !date && !type) return [] // do not return everything if the query is empty
+	const otherQuery = originalQuery => {
+		let query = Object.assign({}, originalQuery)
+		if (type) {
+			query.nature = type
+		}
+
+		// filter according to whether the salary is given or not
+		if (salary == "REQUIRED") {
+			query.salary = { $gt: 0 } // this field indicates whether the salary is included or not
+		} else if (salary == "NOT_REQUIRED") {
+			query.salary = { $eq: 0 }
+		}
+
+		if (date) {
+			query.from = { $gte: new Date(date) }
+		}
+		return query
+	}
 
 	if (searchTerm) {
-		const regexConstraint = { $regex: new RegExp(searchTerm, "i") }
-		query.$or = [
-			{ title: regexConstraint },
-			{ description: regexConstraint },
-			{ nature: regexConstraint },
-			{ state: regexConstraint },
-			{ type: regexConstraint },
-			{ tags: regexConstraint }
-		]
-	}
+		const results = await Promise.all(
+			searchTerm.split(" ").map(async searchTerm => {
+				const regexConstraint = { $regex: new RegExp(searchTerm, "i") }
+				query.$or = [
+					{ title: regexConstraint },
+					{ description: regexConstraint },
+					{ nature: regexConstraint },
+					{ state: regexConstraint },
+					{ type: regexConstraint },
+					{ tags: regexConstraint }
+				]
+				query = otherQuery(query)
+				return await this.find(query)
+			})
+		)
 
-	if (type) {
-		query.nature = type
-	}
+		const flattenedResults = results.reduce(
+			(finalResults, res) => [...finalResults, ...res],
+			[]
+		)
+		let uniqueIds = []
+		for (let res in flattenedResults) {
+			const result = flattenedResults[res]
+			if (uniqueIds.filter(res => res._id.equals(result._id)).length == 0) {
+				uniqueIds.push(result._id)
+			}
+		}
+		const finalResults = uniqueIds // take out the unit ids
+			.map(id => flattenedResults.filter(res => res._id.equals(id))[0]) // get back all results
 
-	// filter according to whether the salary is given or not
-	if (salary == "REQUIRED") {
-		query.salary = { $gt: 0 } // this field indicates whether the salary is included or not
-	} else if (salary == "NOT_REQUIRED") {
-		query.salary = { $eq: 0 }
+		return finalResults
+	} else {
+		query = otherQuery(query)
+		return await this.find(query)
 	}
-
-	if (date) {
-		query.from = { $gte: new Date(date) }
-	}
-	return await this.find(query)
 }
 
 /**

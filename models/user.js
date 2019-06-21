@@ -182,19 +182,49 @@ UserSchema.statics.findUsersContainingName = async function(
 	searchString,
 	isPolitician
 ) {
-	let query = {
-		$or: [
-			{ firstName: { $regex: new RegExp(searchString, "i") } },
-			{ lastName: { $regex: new RegExp(searchString, "i") } },
-			{ username: { $regex: new RegExp(searchString, "i") } }
-		]
-	}
-	if (!isPolitician) {
-		query.isPolitician = true // if the user is not a politician, contains only results of politicians
-	}
-	return await this.find(query).select(
-		"+firstName +lastName +username -bookmarks"
+	console.log("searchstring", searchString)
+	const searchTerms = searchString.split(" ")
+	const queries = searchTerms.map(searchString => {
+		let query = {
+			firstName: { $exists: true },
+			lastName: { $exists: true },
+			$or: [
+				{ firstName: { $regex: new RegExp(searchString, "i") } },
+				{ lastName: { $regex: new RegExp(searchString, "i") } },
+				{ username: { $regex: new RegExp(searchString, "i") } }
+			]
+		}
+		if (!isPolitician) {
+			query.isPolitician = true // if the user is not a politician, contains only results of politicians
+		}
+		return query
+	})
+
+	const results = await Promise.all(
+		queries.map(q =>
+			this.find(q).select("+firstName +lastName +username -bookmarks")
+		)
 	)
+
+	// flatten this list of results
+
+	const flattenedResults = results.reduce(
+		(finalResults, res) => [...finalResults, ...res],
+		[]
+	)
+	let uniqueIds = []
+	for (let res in flattenedResults) {
+		const result = flattenedResults[res]
+		if (uniqueIds.filter(res => res._id.equals(result._id)).length == 0) {
+			uniqueIds.push(result._id)
+		}
+	}
+
+	const finalResults = uniqueIds // take out the unit ids
+		.map(id => flattenedResults.filter(res => res._id.equals(id))[0]) // get back all results
+
+	console.log(finalResults)
+	return finalResults
 }
 const UserModel = mongoose.model("User", UserSchema)
 
