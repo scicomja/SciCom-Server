@@ -106,6 +106,12 @@ ProjectSchema.pre("remove", async function(next) {
 	next()
 })
 
+ProjectSchema.statics.newestProject = function(numProject = 5) {
+	return this.find({})
+		.sort({ createdAt: -1 })
+		.limit(numProject)
+}
+
 ProjectSchema.statics.queryProject = async function({
 	searchTerm,
 	salary,

@@ -7,7 +7,7 @@ const fs = require("fs")
 const path = require("path")
 const { projectDir } = require("../../constants")
 
-const { reportProjectStatus } = require('../../mail')
+const { reportProjectStatus } = require("../../mail")
 
 const { validateParameters, constructQuery } = require("../validator/project")
 
@@ -26,6 +26,10 @@ const { rawSchema, model: ProjectModel } = require("./schema")
 const router = express.Router()
 
 // endpoints
+router.get("/latest", async (req, res) => {
+	const newestProjects = await ProjectModel.newestProject(8)
+	return res.json(newestProjects)
+})
 
 router.get("/:id", async (req, res) => {
 	const { id } = req.params
@@ -168,14 +172,7 @@ router.post("/:id", async (req, res) => {
 	})
 })
 /*
-  search for projects
-  get params:
-  title: substring,
-  status: exact string
-  nature: exact string
-  salary: number, show results >=
-  from: date: show results on or after
-  page: number, positive integer
+	Get latest projects
 */
 router.get("/", async (req, res) => {
 	// extract query
@@ -304,9 +301,13 @@ const setProjectStatus = async (status, req, res) => {
 			return badRequest(res, error)
 		default:
 			const { model: ApplicationModel } = require("../application")
-			const applications = await ApplicationModel.find({ project: ObjectId(id) })
+			const applications = await ApplicationModel.find({
+				project: ObjectId(id)
+			})
 			await Promise.all(
-				applications.map(({ applicant }) => reportProjectStatus({ account: applicant, project, status}))
+				applications.map(({ applicant }) =>
+					reportProjectStatus({ account: applicant, project, status })
+				)
 			)
 			return res.status(200).json({ status, ...project })
 	}
