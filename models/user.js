@@ -57,6 +57,7 @@ const rawSchema = {
 	avatar: String,
 	// contacts
 	phone: String,
+	workingPhone: String,
 	PLZ: String,
 
 	website: String,
