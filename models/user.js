@@ -75,6 +75,7 @@ const rawSchema = {
 			validator: v => !this.isPolitician
 		}
 	},
+	semester: String,
 	university: {
 		type: String,
 		// this field is for students only
