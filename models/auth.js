@@ -86,26 +86,28 @@ router.post("/register", async (req, res) => {
 	// check compulsory fields
 	if (compulsoryFields.some(f => !(f in info))) {
 		return res.status(400).json({
-			error: "missing one of username or password fields"
+			error: "Benutzername oder Passwort fehlt."
 		})
 	}
 	// check if user exists
 	const existUsers = await UserModel.find().or([{ username }, { email }])
 	if (existUsers.length > 0) {
 		return res.status(400).json({
-			error: "user with the same username exists"
+			error:
+				"Ein Account mit diesem Benutzernamen oder dieser Email-Adresse existiert bereits."
 		})
 	}
 	// check if email is valid
 	if (!EmailValidator.validate(email)) {
 		return res.status(400).json({
-			error: "Email is not valid"
+			error: "Email-Adresse ist ungültig"
 		})
 	}
 	// additionally, if he is a student, check student's email address
 	if (!isPolitician && !swot.check(email)) {
 		return res.status(400).json({
-			error: "Provided email is not a student account"
+			error:
+				'Angegebene Email-Adresse ist kein Universitäts-Account. Bitte benutzen Sie z. B. eine "@tum.de"-Adresse.'
 		})
 	}
 	/**
@@ -133,7 +135,7 @@ router.post("/login", async (req, res) => {
 	const info = req.body
 	const invalidate = () =>
 		res.status(401).json({
-			error: "Invalid username / password"
+			error: "Benutzername oder Passwort ungültig"
 		})
 
 	if (!info) {
@@ -244,12 +246,12 @@ router.post("/setPassword", async (req, res) => {
 */
 router.post("/resetPassword", async (req, res) => {
 	const { email } = req.body
-	console.log('email', email)
+	console.log("email", email)
 	const foundUser = await UserModel.findOne({ email })
 	// if there is no such user with this email. do nothing
 	// because otherwise people can use this to spoof which email address is registered.
 	if (!foundUser) return res.json({})
-	console.log('find user')
+	console.log("find user")
 	// the user is found.
 	const { username } = foundUser
 	try {

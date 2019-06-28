@@ -184,7 +184,6 @@ UserSchema.statics.findUsersContainingName = async function(
 	searchString,
 	isPolitician
 ) {
-	console.log("searchstring", searchString)
 	const searchTerms = searchString.split(" ")
 	const queries = searchTerms.map(searchString => {
 		let query = {

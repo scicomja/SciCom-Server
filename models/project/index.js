@@ -152,7 +152,6 @@ router.post("/:id", async (req, res) => {
 				return !("lockdown" in rawSchema[field])
 			})
 		)
-		console.log("details,", details)
 		Object.keys(details).forEach(field => {
 			project.set(field, details[field])
 		})
@@ -260,7 +259,7 @@ router.post("/apply/:id", async (req, res) => {
 			.some(question => !Object.keys(answers || {}).includes(question))
 	) {
 		console.log("bad request:", Object.keys(answers || []), project.questions)
-		return badRequest(res, "some answers to questions are missing")
+		return badRequest(res, "Es fehlen Antworten auf mindestens eine Frage.")
 	}
 	// continue filling out the info
 	const rawApplication = {
@@ -268,13 +267,11 @@ router.post("/apply/:id", async (req, res) => {
 		project: projectId,
 		answers
 	}
-	console.log("application:", rawApplication)
 	const newApplication = new ApplicationModel(rawApplication)
 	try {
 		await newApplication.save()
 		return res.status(201).json(rawApplication)
 	} catch (e) {
-		console.log("error in creating application", e)
 		return badRequest(res, e)
 	}
 })
