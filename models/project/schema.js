@@ -69,12 +69,16 @@ const ProjectSchema = new mongoose.Schema(rawSchema, {
 
 ProjectSchema.pre("validate", function(next) {
 	if (this.to && this.from >= this.to) {
-		return next(new Error("To date must be later than from date"))
+		return next(
+			new Error("Spätester Endttermin muss nach frühestem Starttermin liegen.")
+		)
 	}
 
-	if (!this.file && !this.description) {
+	if (!this.file && !this.description && this.nature != "quick-question") {
 		return next(
-			new Error("At least one of the description or file must be provided")
+			new Error(
+				"Bitte geben Sie entweder eine Beschreibung ein oder laden Sie eine zusätzliche Datei hoch."
+			)
 		)
 	}
 	next()

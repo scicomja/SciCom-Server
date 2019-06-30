@@ -154,7 +154,7 @@ router.post("/login", async (req, res) => {
 	if (!user) return invalidate()
 	if (!user.verified) {
 		return res.status(401).json({
-			error: "The profile is not verified"
+			error: "Das Profil ist nicht verifiziert."
 		})
 	}
 	bcrypt.compare(password, user.password, (err, isMatch) => {

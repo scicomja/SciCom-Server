@@ -47,11 +47,9 @@ const sendVerificationEmail = async ({ email: toEmail, token }) => {
 	const options = {
 		from: from_email_address,
 		to: toEmail,
-		subject: "Verify your email address on sci-com.org",
-		html: `
-			Enter the token below to verify your email address:
-			<b>${token}</b>
-		`
+		subject: "Verifizieren Sie Ihre sci-com.org E-Mail-Adresse",
+		html: `Bitte geben Sie diesen Code auf der Website ein, um die E-Mail-Adresse zu verifizieren:
+		<b>${token}</b>`
 	}
 
 	try {
@@ -69,13 +67,13 @@ const reportApplicationStatus = async ({
 	if (status != "accepted" && status != "rejected") {
 		return
 	}
-
+	const statusString = status == "accepted" ? "angenommen" : "abgelehnt"
 	const options = {
 		from: from_email_address,
 		to: toEmail,
-		subject: `Your application on sci-com.org is ${status}`,
+		subject: `Ihre Bewerbung auf sci.com.org wurde ${statusString}`,
 		html: `
-			This email is to notify you that your application to the project <b>${title}</b> is being ${status}.
+			Ihre Bewerbung zu dem Projekt <b>${title}</b> wurde ${statusString}.
 		`
 	}
 
@@ -93,13 +91,25 @@ const reportProjectStatus = async ({
 	status
 }) => {
 	// if(projectStatus.indexOf(status) < 0) return
+	let statusString = status
+	switch (status) {
+		case "open":
+			statusString = "offen"
+			break
+		case "closed":
+			statusString = "geschlossen"
+			break
+		case "completed":
+			statusString = "Abgeschlossen"
+			break
+	}
 
 	const options = {
 		from: from_email_address,
 		to: toEmail,
-		subject: `The project you have applied for on sci-com.org is ${status}`,
+		subject: `Ein Projekt mit Bewerbung Ihrerseits auf sci-com.org ist ${statusString}`,
 		html: `
-			This email is to notify you that one of the projects you have applied for, <b>${title}</b>, is now ${status}.
+			Das Projekt <b>${title}</b>, auf das Sie sich beworben haben ist nun ${statusString}.
 		`
 	}
 	try {
