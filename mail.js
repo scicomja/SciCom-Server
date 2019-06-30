@@ -31,10 +31,9 @@ const sendResetPasswordEmail = async ({
 	const options = {
 		from: from_email_address,
 		to: toEmail,
-		subject: "Your password reset on sci-com.org",
+		subject: "Passwort auf sci-com.org zurücksetzen",
 		html: `
-			The username of your account is <b>${username}</b> and your verification code is <b>${token}</b>. Please input this token to the checkbox to reset your password.
-    `
+		Der Benutzername Ihres Accounts ist <b>${username}</b> und Ihr Verifikations-Code <b>${token}</b>. Bitte geben Sie diesen Code auf der Website ein, um ihr Passwort zurückzusetzen.`
 	}
 	// let the error throws from here so the caller is going to catch it.
 	try {
