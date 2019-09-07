@@ -12,7 +12,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"bcrypt": "^3.0.3",
+		"bcrypt": "^3.0.6",
 		"cors": "^2.8.5",
 		"email-validator": "^2.0.4",
 		"express": "^4.16.4",
@@ -33,7 +33,7 @@
 		"yup": "^0.27.0"
 	},
 	"devDependencies": {
-		"axios": "^0.18.0",
+		"axios": "^0.18.1",
 		"moxios": "^0.4.0",
 		"sinon": "^7.3.2",
 		"supertest": "^4.0.2"
