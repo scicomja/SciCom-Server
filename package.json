@@ -19,7 +19,7 @@
 		"express-jwt": "^5.3.1",
 		"jest-express": "^1.10.1",
 		"jsonwebtoken": "^8.4.0",
-		"mongoose": "^5.4.3",
+		"mongoose": "^5.7.5",
 		"mongoose-autopopulate": "^0.9.1",
 		"mongoose-lockdown": "^0.1.2",
 		"mongoose-paginate": "^5.0.3",
